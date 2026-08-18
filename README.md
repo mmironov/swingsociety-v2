@@ -227,6 +227,16 @@ This matters because **Vercel's filesystem is ephemeral and read-only at
 runtime**. Without the token, uploads through `/admin` fail and anything already
 there disappears on the next deploy.
 
+
+The token is found by **suffix**, not exact name: `BLOB_READ_WRITE_TOKEN` is
+preferred, and otherwise any variable ending in `BLOB_READ_WRITE_TOKEN` whose
+value looks like a blob token (`vercel_blob_rw_…`) is used. Vercel's connect
+dialog offers an environment-variable prefix and forces one when a second store is
+connected, producing names like `MEDIA_BLOB_READ_WRITE_TOKEN`. Matching only the
+exact name made that misconfiguration silent in the worst way — plugin disabled,
+uploads back on the ephemeral filesystem, build green, files gone on the next
+deploy. See `src/lib/blobToken.ts`.
+
 Two options in `src/payload.config.ts` are deliberate and worth not undoing:
 
 - **`alwaysInsertFields: true`** — the plugin adds a `prefix` column to `media`,

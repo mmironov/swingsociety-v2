@@ -57,8 +57,19 @@ if (onVercel && dbUri?.includes('neon.tech') && !dbUri.includes('-pooler')) {
   warnings.push('DATABASE_URI looks like Neon but is not the pooled host. Serverless opens many short-lived connections; prefer the host containing "-pooler".')
 }
 
-if (onVercel && !process.env.BLOB_READ_WRITE_TOKEN?.trim()) {
-  warnings.push('BLOB_READ_WRITE_TOKEN is not set. Uploads will be written to the local filesystem, which on Vercel is ephemeral and read-only at runtime: uploading through /admin will fail, and any existing file disappears on the next deploy. Create a Blob store and link it to this project.')
+// Mirrors src/lib/blobToken.ts — kept inline because this script runs as plain
+// JS before the TypeScript build. Change both together.
+const blobVar = process.env.BLOB_READ_WRITE_TOKEN?.trim()
+  ? 'BLOB_READ_WRITE_TOKEN'
+  : Object.entries(process.env).find(
+      ([name, value]) =>
+        name.endsWith('BLOB_READ_WRITE_TOKEN') && /^vercel_blob_rw_/i.test(value?.trim() ?? ''),
+    )?.[0]
+
+if (onVercel && !blobVar) {
+  warnings.push('No Vercel Blob token found. Uploads will be written to the local filesystem, which on Vercel is ephemeral and read-only at runtime: uploading through /admin will fail, and any existing file disappears on the next deploy.\n      Create a Blob store (Storage → Create → Blob) and connect it to this project. Any variable name ending in BLOB_READ_WRITE_TOKEN is accepted, so a prefix is fine.')
+} else if (onVercel && blobVar !== 'BLOB_READ_WRITE_TOKEN') {
+  console.log(`  note: blob token found in ${blobVar}`)
 }
 
 for (const w of warnings) console.warn(`\n⚠  ${w}`)

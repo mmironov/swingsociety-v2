@@ -19,6 +19,7 @@ import { Subscribers } from './collections/Subscribers'
 import { SiteSettings } from './globals/SiteSettings'
 import { HomePage } from './globals/HomePage'
 import { SchedulePage } from './globals/SchedulePage'
+import { resolveBlobToken } from './lib/blobToken'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -27,6 +28,12 @@ if (!process.env.PAYLOAD_SECRET) {
 }
 if (!process.env.DATABASE_URI) {
   throw new Error('DATABASE_URI is not set — run `npm run db:up` or point it at your Neon database.')
+}
+
+const blobToken = resolveBlobToken()
+if (blobToken && blobToken.name !== 'BLOB_READ_WRITE_TOKEN') {
+  // Surface the name only — never the value.
+  console.info(`[storage] using Vercel Blob token from ${blobToken.name}`)
 }
 
 export default buildConfig({
@@ -111,7 +118,7 @@ export default buildConfig({
      * already uploaded disappears on the next deploy.
      */
     vercelBlobStorage({
-      enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      enabled: Boolean(blobToken),
       alwaysInsertFields: true,
       collections: {
         media: {
@@ -131,7 +138,7 @@ export default buildConfig({
           disablePayloadAccessControl: true,
         },
       },
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: blobToken?.token,
     }),
   ],
 })
