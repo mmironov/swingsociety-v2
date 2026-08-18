@@ -1,0 +1,17 @@
+/* Admin-panel tweaks. The panel stays on Payload's own default theme — an editor
+   should recognise standard Payload docs — with just the brand accent applied
+   so it feels like the school's tool. */
+:root {
+  --theme-success-500: #7a8a5e;
+}
+
+[data-theme='dark'],
+[data-theme='light'] {
+  --color-success-500: #7a8a5e;
+}
+
+/* Long Bulgarian field descriptions read better with a little more room. */
+.field-description {
+  max-width: 60ch;
+  line-height: 1.5;
+}

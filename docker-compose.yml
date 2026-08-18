@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: swingsociety-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: swingsociety
+      POSTGRES_PASSWORD: swingsociety
+      POSTGRES_DB: swingsociety
+    ports:
+      - '5433:5432'
+    volumes:
+      - swingsociety-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U swingsociety -d swingsociety']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  swingsociety-pgdata:
