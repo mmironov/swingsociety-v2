@@ -30,6 +30,22 @@ if (!process.env.DATABASE_URI) {
   throw new Error('DATABASE_URI is not set — run `npm run db:up` or point it at your Neon database.')
 }
 
+/**
+ * Environment values, trimmed.
+ *
+ * A value pasted into a dashboard can carry invisible whitespace — this project
+ * shipped with a leading tab in NEXT_PUBLIC_SERVER_URL, and the symptom was
+ * "You are not allowed to perform this action" on every edit in the admin panel.
+ * Payload compares the browser's Origin header against serverURL as a plain
+ * string for CSRF, so a tab makes every authenticated write fail while reads,
+ * being public, look perfectly healthy.
+ *
+ * It is also close to undiagnosable from the outside: the URL parser strips
+ * leading whitespace, so canonical URLs and og:image come out correct, and if the
+ * variable is marked Sensitive in Vercel the value cannot be read back to see it.
+ */
+const env = (name: string): string | undefined => process.env[name]?.trim() || undefined
+
 const blobToken = resolveBlobToken()
 if (blobToken && blobToken.name !== 'BLOB_READ_WRITE_TOKEN') {
   // Surface the name only — never the value.
@@ -37,8 +53,8 @@ if (blobToken && blobToken.name !== 'BLOB_READ_WRITE_TOKEN') {
 }
 
 export default buildConfig({
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
-  secret: process.env.PAYLOAD_SECRET,
+  serverURL: env('NEXT_PUBLIC_SERVER_URL'),
+  secret: env('PAYLOAD_SECRET') as string,
 
   admin: {
     user: Users.slug,
@@ -76,7 +92,7 @@ export default buildConfig({
   editor: lexicalEditor(),
 
   db: postgresAdapter({
-    pool: { connectionString: process.env.DATABASE_URI },
+    pool: { connectionString: env('DATABASE_URI') },
     // In development Payload reconciles the schema on boot. In production the
     // schema is applied by `payload migrate` during the build, so a cold serverless
     // start never tries to alter tables.

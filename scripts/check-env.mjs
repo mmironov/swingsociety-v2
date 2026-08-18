@@ -25,6 +25,27 @@ for (const [name, hint] of Object.entries(required)) {
   if (!process.env[name]?.trim()) errors.push(`${name} is not set\n      ${hint}`)
 }
 
+/**
+ * Whitespace pasted along with a value.
+ *
+ * This shipped once: a leading tab in NEXT_PUBLIC_SERVER_URL made Payload refuse
+ * every authenticated write with "You are not allowed to perform this action",
+ * because it compares the browser Origin against serverURL as a plain string.
+ * Nothing else caught it — `new URL()` strips leading whitespace, so the value
+ * parsed fine and canonical URLs were correct — and a Sensitive variable cannot be
+ * read back in the dashboard to spot it.
+ */
+for (const name of Object.keys(required)) {
+  const raw = process.env[name]
+  if (!raw || raw === raw.trim()) continue
+  const show = (s) => JSON.stringify(s).slice(1, -1).replace(/\\t/g, '\\t')
+  errors.push(
+    `${name} has leading or trailing whitespace: "${show(raw.slice(0, 12))}…"\n` +
+      `      Invisible in the dashboard, and it breaks string comparisons even though the value looks right.\n` +
+      `      Re-paste it without the stray character.`,
+  )
+}
+
 const secret = process.env.PAYLOAD_SECRET?.trim()
 if (secret && secret.length < 32) {
   errors.push(`PAYLOAD_SECRET is only ${secret.length} characters — use at least 32.\n      Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
