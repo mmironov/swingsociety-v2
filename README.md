@@ -366,21 +366,34 @@ npm run content:import /tmp/content.json   # reads .env.production.local (Neon)
 The import is a **dry run unless you pass `--commit`**, and prints exactly which
 rows it would update or create first.
 
-Three things it handles that a database copy would get wrong:
+It covers **Courses, Reviews, and the three globals** (home page, schedule page,
+site settings). Media is deliberately excluded: those files are already in blob
+storage under the names the seed assigned, and re-uploading would duplicate them.
 
-- **Page relationships travel as slugs.** Row ids differ between databases, so a
-  copied id points at an unrelated page. Unresolvable slugs become null, and the
-  dry run lists them.
-- **Localized arrays keep their ids.** Writing the English pass without the ids
-  Payload assigned during the Bulgarian pass makes it create fresh rows and orphan
-  the Bulgarian text.
-- **Nothing is deleted.** The home page global references courses by id, so the
-  seeded course is updated in place rather than replaced. Courses match on title
-  plus start date — title alone collides, since two are both called
-  "Swing танци за начинаещи" — so a second run updates instead of duplicating.
+Four things it handles that a database copy would get wrong:
 
-It covers Courses and Reviews. Media is deliberately excluded: those files live in
-blob storage under names the seed assigned, and re-uploading would duplicate them.
+- **Relationships travel as content-derived keys, not ids.** Media by filename
+  stem, pages by slug, courses by title plus start date. Row ids differ between
+  databases, so a copied id points at something unrelated. Anything unresolvable
+  becomes null and is listed before any write happens.
+- **Which fields are relationships comes from the Payload schema**, via
+  `src/scripts/refs.ts`. Inferring it from a value's shape does not work: globals
+  are full of plain groups that have a `title` — every video tile, the festival
+  card, the SEO meta group — and treating those as course references turns real
+  content into dangling nulls.
+- **Keys are always built from the Bulgarian locale.** Page slugs and course titles
+  are localized, so keying the English document against its own values finds
+  nothing.
+- **Localized arrays keep their ids, and nothing is deleted.** Writing the English
+  pass without the ids Payload assigned on the Bulgarian pass makes it create fresh
+  rows and orphan the Bulgarian text. And the home page references courses by id,
+  so the seeded course is adopted and updated rather than left beside a copy —
+  matching on title plus start date, since two courses share a title, so a re-run
+  updates instead of duplicating.
+
+Media filenames are matched on the stem with any `-N` suffix removed: seeding from
+a machine that already has `public/media` makes Payload's collision check store
+`all-1.webp` where local has `all.webp`.
 
 Content written this way does **not** appear on the deployed site until you
 redeploy, for the same reason the seed does not — see step 3 of First deploy.

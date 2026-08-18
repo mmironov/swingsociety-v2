@@ -1,26 +1,32 @@
 /**
- * Imports the export-content.ts dump into whichever database --env-file points at.
+ * Imports an export-content.ts dump into whichever database --env-file points at.
  *
- * Dry run unless --commit is passed: prints exactly what it would write, because
- * the target here is production.
+ * Dry run unless --commit, because the usual target is production.
  *
- * Three things it is careful about:
+ * What it is careful about:
  *
- * 1. It never deletes. The home page global references courses by id, so removing
- *    the seeded course would null those references. The lowest-id existing course
- *    is updated in place instead, and the rest are created.
- *
- * 2. Page relationships arrive as {__pageSlug} and are resolved against *this*
- *    database's pages. An unresolvable slug becomes null rather than a wrong id.
- *
- * 3. Localized arrays are written with the ids Payload assigned during the
- *    Bulgarian pass. Sending an array without ids on the English pass makes
- *    Payload create fresh rows, orphaning the Bulgarian text — the same trap that
- *    once emptied the seeded list blocks.
+ * 1. Nothing is deleted. The home page global references courses by id, so the
+ *    seeded course is adopted and updated rather than left beside a copy.
+ * 2. Courses match on title plus start date. Title alone collides — two are both
+ *    "Swing танци за начинаещи" — so a re-run updates instead of duplicating.
+ * 3. References arrive as content-derived keys and are resolved against this
+ *    database. Anything unresolvable is written as null and reported, never guessed.
+ * 4. Localized arrays are written with the ids Payload assigned on the Bulgarian
+ *    pass. Without them Payload creates fresh rows and orphans the Bulgarian text.
+ * 5. Globals are written last, so their course references can resolve to rows
+ *    created earlier in the same run.
  */
 import { getPayload } from 'payload'
 import { readFileSync } from 'fs'
 import config from '../payload.config'
+import {
+  collectionRefPaths,
+  courseKey,
+  decodeRef,
+  globalRefPaths,
+  mapRefs,
+  mediaKey,
+} from './refs'
 
 const COMMIT = process.argv.includes('--commit')
 const file = process.argv.find((a) => a.endsWith('.json'))
@@ -29,37 +35,41 @@ if (!file) {
   process.exit(1)
 }
 
+type Row = { sourceId: number; bg: Record<string, unknown>; en: Record<string, unknown> }
 type Dump = {
-  courses: { sourceId: number; bg: Record<string, unknown>; en: Record<string, unknown> }[]
-  reviews: { sourceId: number; bg: Record<string, unknown>; en: Record<string, unknown> }[]
+  courses: Row[]
+  reviews: Row[]
+  globals?: Record<string, Record<string, Record<string, unknown>>>
 }
 const dump = JSON.parse(readFileSync(file, 'utf8')) as Dump
 
 const payload = await getPayload({ config })
 
-const pages = await payload.find({
-  collection: 'pages',
-  limit: 200,
-  locale: 'bg',
-  overrideAccess: true,
-  depth: 0,
-})
-const idBySlug = new Map<string, number>()
-for (const page of pages.docs) if (page.slug) idBySlug.set(page.slug, page.id as number)
+// ─── portable key → id in THIS database ──────────────────────────────────────
+const idByKey = new Map<string, number>()
+for (const doc of (await payload.find({ collection: 'media', limit: 500, overrideAccess: true, depth: 0 })).docs) {
+  if (doc.filename) idByKey.set(`media:${mediaKey(doc.filename)}`, doc.id as number)
+}
+for (const doc of (await payload.find({ collection: 'pages', limit: 500, locale: 'bg', overrideAccess: true, depth: 0 })).docs) {
+  if (doc.slug) idByKey.set(`pages:${doc.slug}`, doc.id as number)
+}
+const existingCourses = (
+  await payload.find({ collection: 'courses', limit: 500, sort: 'id', locale: 'bg', overrideAccess: true, depth: 0 })
+).docs
+for (const doc of existingCourses) {
+  idByKey.set(`courses:${courseKey(doc as unknown as Record<string, unknown>)}`, doc.id as number)
+}
 
 const unresolved: string[] = []
-const resolveRefs = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(resolveRefs)
-  if (value && typeof value === 'object') {
-    const obj = value as Record<string, unknown>
-    if (typeof obj.__pageSlug === 'string') {
-      const id = idBySlug.get(obj.__pageSlug)
-      if (id === undefined) unresolved.push(obj.__pageSlug)
-      return id ?? null
-    }
-    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, resolveRefs(v)]))
+const resolve = (value: unknown): unknown => {
+  const ref = decodeRef(value)
+  if (!ref) return value ?? null
+  const id = idByKey.get(`${ref.relationTo}:${ref.key}`)
+  if (id === undefined) {
+    unresolved.push(`${ref.relationTo}:${ref.key}`)
+    return null
   }
-  return value
+  return id
 }
 
 /** Copies ids from a saved doc onto the same positions of an incoming payload. */
@@ -82,42 +92,27 @@ const withIds = (saved: unknown, incoming: unknown): unknown => {
   return incoming
 }
 
-const existingCourses = await payload.find({
-  collection: 'courses',
-  limit: 200,
-  sort: 'id',
-  locale: 'bg',
-  overrideAccess: true,
-  depth: 0,
-})
-const existingReviews = await payload.find({
-  collection: 'reviews',
-  limit: 200,
-  sort: 'id',
-  locale: 'bg',
-  overrideAccess: true,
-  depth: 0,
-})
+const coursePaths = collectionRefPaths(payload.config, 'courses')
+const reviewPaths = collectionRefPaths(payload.config, 'reviews')
+const resolveDoc = (doc: Record<string, unknown>, paths: ReturnType<typeof collectionRefPaths>) =>
+  mapRefs(doc, paths, resolve) as Record<string, unknown>
+
+// ─── plan ────────────────────────────────────────────────────────────────────
+const existingReviews = (
+  await payload.find({ collection: 'reviews', limit: 500, sort: 'id', locale: 'bg', overrideAccess: true, depth: 0 })
+).docs
 
 console.log(`\n▸ ${COMMIT ? 'IMPORTING' : 'DRY RUN — nothing will be written'}\n`)
-console.log(`  target has ${existingCourses.totalDocs} course(s), ${existingReviews.totalDocs} review(s)`)
-console.log(`  dump has   ${dump.courses.length} course(s), ${dump.reviews.length} review(s)\n`)
-
-/**
- * Courses are matched on title + start date, so a second run updates rather than
- * duplicating. Title alone is not enough: two of them are both called
- * "Swing танци за начинаещи" and differ only by when they start.
- */
-const courseKey = (c: Record<string, unknown>) =>
-  `${String(c.title ?? '').trim()}|${c.startDate ?? ''}`
+console.log(`  target: ${existingCourses.length} course(s), ${existingReviews.length} review(s)`)
+console.log(`  dump:   ${dump.courses.length} course(s), ${dump.reviews.length} review(s), ${Object.keys(dump.globals ?? {}).length} global(s)\n`)
 
 const claimed = new Set<number>()
-const targetFor = new Map<number, number>() // dump index → existing course id
+const targetFor = new Map<number, number>()
 
-// Exact matches first, so a re-run lands on the same rows.
+// Exact key matches first, so a re-run lands on the same rows.
 dump.courses.forEach((course, index) => {
   const key = courseKey(course.bg)
-  const hit = existingCourses.docs.find(
+  const hit = existingCourses.find(
     (d) => !claimed.has(d.id as number) && courseKey(d as unknown as Record<string, unknown>) === key,
   )
   if (hit) {
@@ -126,13 +121,12 @@ dump.courses.forEach((course, index) => {
   }
 })
 
-// Then adopt a same-titled leftover — on the first run that is the seeded
-// placeholder, which the home page global references by id and must not be
-// orphaned by creating a parallel course beside it.
+// Then adopt a same-titled leftover — on a first run that is the seeded
+// placeholder, which the home page references by id.
 dump.courses.forEach((course, index) => {
   if (targetFor.has(index)) return
   const title = String(course.bg.title ?? '').trim()
-  const spare = existingCourses.docs.find(
+  const spare = existingCourses.find(
     (d) =>
       !claimed.has(d.id as number) &&
       String((d as unknown as Record<string, unknown>).title ?? '').trim() === title,
@@ -143,34 +137,50 @@ dump.courses.forEach((course, index) => {
   }
 })
 
-const plan: string[] = []
-dump.courses.forEach((course, index) => {
-  const title = String(course.bg.title ?? '?')
-  const id = targetFor.get(index)
-  plan.push(id !== undefined ? `  UPDATE course #${id} ← "${title}"` : `  CREATE course      ← "${title}"`)
-})
-
-const reviewKey = (r: Record<string, unknown>) => `${r.author ?? ''}|${String(r.quote ?? '').slice(0, 40)}`
+const reviewKey = (r: Record<string, unknown>) =>
+  `${r.author ?? ''}|${String(r.quote ?? '').slice(0, 40)}`
 const haveReview = new Set(
-  existingReviews.docs.map((d) => reviewKey(d as unknown as Record<string, unknown>)),
+  existingReviews.map((d) => reviewKey(d as unknown as Record<string, unknown>)),
 )
+
+dump.courses.forEach((course, index) => {
+  const id = targetFor.get(index)
+  console.log(
+    id !== undefined
+      ? `  UPDATE course #${id} ← "${course.bg.title}"`
+      : `  CREATE course      ← "${course.bg.title}"`,
+  )
+})
 dump.reviews.forEach((review) => {
-  const key = reviewKey(review.bg)
-  plan.push(
-    haveReview.has(key)
-      ? `  SKIP   review        (already present) "${review.bg.author}"`
+  console.log(
+    haveReview.has(reviewKey(review.bg))
+      ? `  SKIP   review        "${review.bg.author}" (already present)`
       : `  CREATE review      ← "${review.bg.author}"`,
   )
 })
-plan.forEach((line) => console.log(line))
+for (const slug of Object.keys(dump.globals ?? {})) console.log(`  UPDATE global  ${slug}`)
 
-// Resolve page refs before reporting, so unresolved slugs surface in the dry run.
-for (const c of dump.courses) {
-  c.bg = resolveRefs(c.bg) as Record<string, unknown>
-  c.en = resolveRefs(c.en) as Record<string, unknown>
+// Resolve everything now so unresolved references surface before any write.
+for (const course of dump.courses) {
+  course.bg = resolveDoc(course.bg, coursePaths)
+  course.en = resolveDoc(course.en, coursePaths)
 }
+for (const review of dump.reviews) {
+  review.bg = resolveDoc(review.bg, reviewPaths)
+  review.en = resolveDoc(review.en, reviewPaths)
+}
+const resolvedGlobals: Record<string, { bg: Record<string, unknown>; en: Record<string, unknown> }> = {}
+for (const [slug, byLocale] of Object.entries(dump.globals ?? {})) {
+  const paths = globalRefPaths(payload.config, slug)
+  resolvedGlobals[slug] = {
+    bg: mapRefs(byLocale.bg, paths, resolve) as Record<string, unknown>,
+    en: mapRefs(byLocale.en, paths, resolve) as Record<string, unknown>,
+  }
+}
+
 if (unresolved.length > 0) {
-  console.log(`\n  ⚠ page slug(s) not found in this database, set to null: ${[...new Set(unresolved)].join(', ')}`)
+  console.log(`\n  ⚠ ${new Set(unresolved).size} unresolved reference(s), would be written as null:`)
+  for (const ref of [...new Set(unresolved)]) console.log(`      ${ref}`)
 }
 
 if (!COMMIT) {
@@ -179,10 +189,15 @@ if (!COMMIT) {
   process.exit(0)
 }
 
-const writeBoth = async (collection: 'courses' | 'reviews', id: number, bg: Record<string, unknown>, en: Record<string, unknown>) => {
+// ─── write ───────────────────────────────────────────────────────────────────
+const writeBoth = async (
+  collection: 'courses' | 'reviews',
+  id: number,
+  bg: Record<string, unknown>,
+  en: Record<string, unknown>,
+) => {
   const saved = await payload.update({ collection, id, locale: 'bg', data: bg as never, overrideAccess: true, depth: 0 })
-  const merged = withIds(saved, en) as Record<string, unknown>
-  await payload.update({ collection, id, locale: 'en', data: merged as never, overrideAccess: true, depth: 0 })
+  await payload.update({ collection, id, locale: 'en', data: withIds(saved, en) as never, overrideAccess: true, depth: 0 })
 }
 
 for (const [index, course] of dump.courses.entries()) {
@@ -205,6 +220,12 @@ for (const review of dump.reviews) {
   const created = await payload.create({ collection: 'reviews', locale: 'bg', data: review.bg as never, overrideAccess: true, depth: 0 })
   await writeBoth('reviews', created.id as number, review.bg, review.en)
   console.log(`  created review #${created.id} "${review.bg.author}"`)
+}
+
+for (const [slug, byLocale] of Object.entries(resolvedGlobals)) {
+  const saved = await payload.updateGlobal({ slug: slug as 'home-page', locale: 'bg', data: byLocale.bg as never, overrideAccess: true, depth: 0 })
+  await payload.updateGlobal({ slug: slug as 'home-page', locale: 'en', data: withIds(saved, byLocale.en) as never, overrideAccess: true, depth: 0 })
+  console.log(`  updated global ${slug}`)
 }
 
 console.log('\n✓ Imported. The deployed site is prerendered — redeploy to see it.\n')

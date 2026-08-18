@@ -1,19 +1,32 @@
 /**
- * Exports Courses and Reviews from whichever database the --env-file points at.
+ * Exports Courses, Reviews and the three globals from whichever database
+ * --env-file points at.
  *
- * Two processes rather than one, because a Payload config binds to a single
- * DATABASE_URI at import time — so local and production cannot be opened
- * together. Export here, import with the other script.
+ * Export and import are separate processes because a Payload config binds to one
+ * DATABASE_URI at import time, so both databases cannot be open together.
  *
- * Page relationships are exported as *slugs*, not ids: row ids differ between
- * databases, so an id copied across would point at an unrelated page or nothing.
+ * Relationships are rewritten to content-derived keys, since row ids differ
+ * between databases and a copied id points at something unrelated. Which fields
+ * are relationships comes from the Payload schema — see refs.ts for why guessing
+ * from the value's shape is not good enough.
  */
 import { getPayload } from 'payload'
 import { writeFileSync } from 'fs'
 import config from '../payload.config'
-import type { Course, Review } from '../payload-types'
+import {
+  collectionRefPaths,
+  courseKey,
+  encodeRef,
+  globalRefPaths,
+  mapRefs,
+  mediaKey,
+  stripMeta,
+} from './refs'
 
 const LOCALES = ['bg', 'en'] as const
+const COLLECTIONS = ['courses', 'reviews'] as const
+const GLOBALS = ['home-page', 'schedule-page', 'site-settings'] as const
+
 const out = process.argv[2]
 if (!out) {
   console.error('usage: export-content <output.json>')
@@ -22,72 +35,85 @@ if (!out) {
 
 const payload = await getPayload({ config })
 
-/** Local page id → its Bulgarian slug, for turning ids into portable keys. */
-const pages = await payload.find({
-  collection: 'pages',
-  limit: 200,
-  locale: 'bg',
-  overrideAccess: true,
-  depth: 0,
-})
-const slugById = new Map<number, string>()
-for (const page of pages.docs) {
-  if (page.slug) slugById.set(page.id as number, page.slug)
+// ─── id → portable key, always from the Bulgarian locale ─────────────────────
+const keyById = new Map<string, string>()
+const remember = (relationTo: string, id: number, key: string) =>
+  keyById.set(`${relationTo}:${id}`, key)
+
+for (const doc of (await payload.find({ collection: 'media', limit: 500, overrideAccess: true, depth: 0 })).docs) {
+  if (doc.filename) remember('media', doc.id as number, mediaKey(doc.filename))
+}
+for (const doc of (await payload.find({ collection: 'pages', limit: 500, locale: 'bg', overrideAccess: true, depth: 0 })).docs) {
+  if (doc.slug) remember('pages', doc.id as number, doc.slug)
+}
+for (const doc of (await payload.find({ collection: 'courses', limit: 500, locale: 'bg', overrideAccess: true, depth: 0 })).docs) {
+  remember('courses', doc.id as number, courseKey(doc as unknown as Record<string, unknown>))
 }
 
-const asSlugRef = (value: unknown): unknown => {
+const missing: string[] = []
+const toPortable = (value: unknown, relationTo: string): unknown => {
   if (typeof value !== 'number') return value ?? null
-  const slug = slugById.get(value)
-  return slug ? { __pageSlug: slug } : null
+  const key = keyById.get(`${relationTo}:${value}`)
+  if (key === undefined) {
+    missing.push(`${relationTo}#${value}`)
+    return null
+  }
+  return encodeRef(relationTo, key)
 }
 
-const strip = (doc: Record<string, unknown>) => {
-  const { id, createdAt, updatedAt, ...rest } = doc
-  return rest
+// ─── collections ─────────────────────────────────────────────────────────────
+const collections: Record<string, Record<string, unknown>[]> = {}
+for (const slug of COLLECTIONS) {
+  const paths = collectionRefPaths(payload.config, slug)
+  const rows: Record<string, unknown>[] = []
+  for (const locale of LOCALES) {
+    const found = await payload.find({
+      collection: slug,
+      limit: 500,
+      sort: 'id',
+      locale,
+      overrideAccess: true,
+      depth: 0,
+    })
+    found.docs.forEach((doc, index) => {
+      rows[index] ??= { sourceId: doc.id }
+      rows[index][locale] = mapRefs(
+        stripMeta(doc as unknown as Record<string, unknown>),
+        paths,
+        toPortable,
+      )
+    })
+  }
+  collections[slug] = rows
 }
 
-const courses: Record<string, unknown>[] = []
-for (const locale of LOCALES) {
-  const found = await payload.find({
-    collection: 'courses',
-    limit: 200,
-    sort: 'id',
-    locale,
-    overrideAccess: true,
-    depth: 0,
-  })
-  found.docs.forEach((doc, index) => {
-    const data = strip(doc as unknown as Record<string, unknown>) as Record<string, unknown>
-    data.page = asSlugRef((doc as Course).page as unknown)
-    const registration = data.registration as Record<string, unknown> | undefined
-    if (registration) registration.page = asSlugRef(registration.page)
-    courses[index] ??= { sourceId: doc.id }
-    ;(courses[index] as Record<string, unknown>)[locale] = data
-  })
-}
-
-const reviews: Record<string, unknown>[] = []
-for (const locale of LOCALES) {
-  const found = await payload.find({
-    collection: 'reviews',
-    limit: 200,
-    sort: 'id',
-    locale,
-    overrideAccess: true,
-    depth: 0,
-  })
-  found.docs.forEach((doc, index) => {
-    reviews[index] ??= { sourceId: doc.id }
-    ;(reviews[index] as Record<string, unknown>)[locale] = strip(
-      doc as unknown as Record<string, unknown>,
+// ─── globals ─────────────────────────────────────────────────────────────────
+const globals: Record<string, Record<string, unknown>> = {}
+for (const slug of GLOBALS) {
+  const paths = globalRefPaths(payload.config, slug)
+  globals[slug] = {}
+  for (const locale of LOCALES) {
+    const doc = await payload.findGlobal({ slug, locale, overrideAccess: true, depth: 0 })
+    globals[slug][locale] = mapRefs(
+      stripMeta(doc as unknown as Record<string, unknown>),
+      paths,
+      toPortable,
     )
-  })
+  }
 }
 
-writeFileSync(out, JSON.stringify({ courses, reviews }, null, 2), 'utf8')
-console.log(`  exported ${courses.length} course(s) and ${reviews.length} review(s) → ${out}`)
-for (const c of courses) console.log(`    course #${c.sourceId} "${(c.bg as Course).title}"`)
-for (const r of reviews) console.log(`    review #${r.sourceId} ${(r.bg as Review).author}`)
+writeFileSync(
+  out,
+  JSON.stringify({ courses: collections.courses, reviews: collections.reviews, globals }, null, 2),
+  'utf8',
+)
+
+console.log(`  exported → ${out}`)
+for (const slug of COLLECTIONS) console.log(`    ${slug}: ${collections[slug].length}`)
+for (const slug of GLOBALS) console.log(`    global ${slug}`)
+if (missing.length > 0) {
+  console.log(`  ⚠ reference(s) with no key in this database, exported as null: ${[...new Set(missing)].join(', ')}`)
+}
 
 await payload.db.destroy?.()
 process.exit(0)
