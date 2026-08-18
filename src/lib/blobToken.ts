@@ -29,3 +29,19 @@ export const resolveBlobToken = (env: NodeJS.ProcessEnv = process.env): BlobToke
 
   return null
 }
+
+/**
+ * Public host the adapter will serve this token's store from.
+ *
+ * Worth printing after a remote seed: the token decides which store the files go
+ * into, and the deployed app rebuilds every media URL from *its own* token. Two
+ * tokens for two stores means uploads land in one and the site asks the other, so
+ * every image 404s while both halves look correct in isolation.
+ *
+ * Mirrors the adapter's own construction — store id from the token, `.public.`
+ * hardcoded, since public access is all it supports.
+ */
+export const blobStoreHost = (token: string): string | null => {
+  const storeId = token.match(/^vercel_blob_rw_([a-z\d]+)_[a-z\d]+$/i)?.[1]?.toLowerCase()
+  return storeId ? `https://${storeId}.public.blob.vercel-storage.com` : null
+}

@@ -15,6 +15,7 @@ import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { getPayload, type Payload } from 'payload'
 import config from '../payload.config'
+import { resolveBlobToken, blobStoreHost } from '../lib/blobToken'
 import { doc, plain, richText, url as urlRun, type Run } from './lexical'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -1494,6 +1495,21 @@ const main = async () => {
   await backfillMedia(payload, media)
 
   if (isRemoteDatabase()) {
+    const blob = resolveBlobToken()
+    const host = blob && blobStoreHost(blob.token)
+    if (host) {
+      console.log(`
+  Files were uploaded to:  ${host}
+  The deployed site rebuilds every media URL from its OWN token, so it must hold a
+  token for THIS SAME store. Two stores means uploads land in one while the site
+  asks the other, and every image 404s with both halves looking fine on their own.
+  Check Vercel → Storage → this store → Projects.`)
+    } else if (!blob) {
+      console.log(`
+⚠  No blob token was set, so files went to the local filesystem, not blob storage.
+   The deployed site will not be able to serve them.`)
+    }
+
     console.log(`
 ✓ Done — content written to the remote database.
 
