@@ -36,6 +36,24 @@ const TBD_EN = 'to be confirmed'
 
 const log = (message: string) => console.log(`  ${message}`)
 
+/**
+ * Whether we are seeding something other than the local Docker Postgres.
+ *
+ * Used only to warn about stale prerendered pages: writes from this script
+ * cannot revalidate a deployed site's cache, because revalidatePath needs to run
+ * inside the Next server. Treats an unparseable URI as remote — the warning is
+ * harmless when wrong in that direction.
+ */
+const isRemoteDatabase = (): boolean => {
+  const uri = process.env.DATABASE_URI ?? ''
+  try {
+    const host = new URL(uri).hostname
+    return !['localhost', '127.0.0.1', '::1', 'host.docker.internal'].includes(host)
+  } catch {
+    return true
+  }
+}
+
 /* ══ helpers ═══════════════════════════════════════════════════════════════ */
 
 type Row = Record<string, unknown>
@@ -1447,7 +1465,26 @@ const main = async () => {
   // Last: everything it fills has to exist first.
   await backfillMedia(payload, media)
 
-  console.log('\n✓ Done. Start the site with `npm run dev` and open http://localhost:3000\n')
+  if (isRemoteDatabase()) {
+    console.log(`
+✓ Done — content written to the remote database.
+
+⚠  The deployed site will NOT show it yet.
+
+   Every page is prerendered, and the hooks that refresh them call Next's
+   revalidatePath, which only works from inside the running app. This script is a
+   separate process on your machine, so it cannot reach the deployed cache — the
+   pages Vercel built are still the ones it built.
+
+   Redeploy to regenerate them: in Vercel, open the project → Deployments → the
+   latest one → Redeploy. No commit needed.
+
+   (Edits made through the deployed /admin panel do not need this. Those run
+   inside the app, so they refresh the site within seconds, as normal.)
+`)
+  } else {
+    console.log('\n✓ Done. Start the site with `npm run dev` and open http://localhost:3000\n')
+  }
   process.exit(0)
 }
 

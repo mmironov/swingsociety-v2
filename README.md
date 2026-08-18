@@ -262,14 +262,37 @@ panel's preview links, so it must match the real domain.
 
 ### 5. First deploy
 
-Push the repo, import it in Vercel, deploy. Then open `/admin` and create the
-first user — the seed's admin account only exists in your local database.
+**The order matters, and not in the obvious way.** Do it in exactly these steps:
 
-To load the starting content into production, point `DATABASE_URI` at Neon
-locally **and set `BLOB_READ_WRITE_TOKEN`**, then run `npm run seed` once. The
-photos and videos in `assets-inbox/` upload through Payload, so with the token
-set they land in blob storage on the way through. It only fills what is empty, so
-it is safe to run against a live database — but `seed:fresh` is not.
+**1. Import the repo in Vercel and deploy.** The build runs `payload migrate`,
+which creates the schema, then prerenders against a database that has tables but
+no content. This works — verified — and gives you 8 pages instead of the usual
+16, since there are no CMS pages to prerender yet. The site renders a sparse but
+valid skeleton: the hero shows the `defaultValue` from the config, empty sections
+hide themselves, and the review tiles show their dashed placeholders.
+
+**2. Seed the content.** Point `DATABASE_URI` at Neon locally **and set
+`BLOB_READ_WRITE_TOKEN`**, then run `npm run seed` once. The photos and videos in
+`assets-inbox/` upload through Payload, so with the token set they land in blob
+storage on the way through. It only fills what is empty, so it is safe against a
+live database — but `seed:fresh` is not.
+
+**3. Redeploy.** In Vercel: project → Deployments → latest → **Redeploy**. No
+commit needed.
+
+Step 3 is the one that is easy to miss. Every page is prerendered, and the hooks
+that refresh them call Next's `revalidatePath`, which only works *inside* the
+running app. The seed is a separate process on your machine, so it cannot reach
+the deployed cache — Vercel keeps serving the pages it built in step 1, and the
+site looks empty even though Neon is full. The seed prints a reminder when it
+notices it is writing to a non-local database.
+
+This applies only to writes from outside the app. **Edits through the deployed
+`/admin` panel need none of it** — those run inside the Next server, so they
+reach the live site within seconds, which is the whole point of the setup.
+
+Finally, open `/admin` and create your real user. The seed's admin account uses
+`SEED_ADMIN_PASSWORD`; don't carry `changeme` into production.
 
 ### 6. Email (not yet configured)
 
