@@ -92,6 +92,50 @@ const withIds = (saved: unknown, incoming: unknown): unknown => {
   return incoming
 }
 
+/**
+ * Array paths where the incoming data holds fewer rows than the target already has.
+ *
+ * This exists because of a real incident: a bug turned each video tile object into
+ * a dangling reference, the array arrived as nulls, and the home page's three
+ * videos were silently deleted — in the source database first, then propagated to
+ * production. Every check in place at the time passed, because they compared the
+ * source against itself after it was already damaged.
+ *
+ * A shrinking array is not always wrong — someone may genuinely have deleted a FAQ
+ * row — so this reports rather than assumes, and --allow-removals proceeds.
+ */
+const shrinkingArrays = (
+  target: unknown,
+  incoming: unknown,
+  path = '',
+): { path: string; from: number; to: number }[] => {
+  const found: { path: string; from: number; to: number }[] = []
+
+  if (Array.isArray(target)) {
+    const to = Array.isArray(incoming) ? incoming.length : 0
+    if (to < target.length) found.push({ path: path || '(root)', from: target.length, to })
+    if (Array.isArray(incoming)) {
+      const pairs = Math.min(target.length, incoming.length)
+      for (let i = 0; i < pairs; i++) {
+        found.push(...shrinkingArrays(target[i], incoming[i], `${path}[${i}]`))
+      }
+    }
+    return found
+  }
+
+  if (target && typeof target === 'object' && incoming && typeof incoming === 'object') {
+    for (const [key, value] of Object.entries(target as Record<string, unknown>)) {
+      found.push(
+        ...shrinkingArrays(value, (incoming as Record<string, unknown>)[key], path ? `${path}.${key}` : key),
+      )
+    }
+  }
+
+  return found
+}
+
+const ALLOW_REMOVALS = process.argv.includes('--allow-removals')
+
 const coursePaths = collectionRefPaths(payload.config, 'courses')
 const reviewPaths = collectionRefPaths(payload.config, 'reviews')
 const resolveDoc = (doc: Record<string, unknown>, paths: ReturnType<typeof collectionRefPaths>) =>
@@ -181,6 +225,35 @@ for (const [slug, byLocale] of Object.entries(dump.globals ?? {})) {
 if (unresolved.length > 0) {
   console.log(`\n  ⚠ ${new Set(unresolved).size} unresolved reference(s), would be written as null:`)
   for (const ref of [...new Set(unresolved)]) console.log(`      ${ref}`)
+}
+
+// Compare against what each global currently holds, before overwriting it.
+const removals: string[] = []
+for (const [slug, byLocale] of Object.entries(resolvedGlobals)) {
+  for (const locale of ['bg', 'en'] as const) {
+    const current = await payload.findGlobal({
+      slug: slug as 'home-page',
+      locale,
+      overrideAccess: true,
+      depth: 0,
+    })
+    for (const loss of shrinkingArrays(current, byLocale[locale])) {
+      removals.push(`${slug} [${locale}] ${loss.path}: ${loss.from} → ${loss.to}`)
+    }
+  }
+}
+
+if (removals.length > 0) {
+  console.log(`\n  ⚠ this would REMOVE rows that exist in the target:`)
+  for (const line of removals) console.log(`      ${line}`)
+  if (COMMIT && !ALLOW_REMOVALS) {
+    console.log(
+      '\n✗ Refusing to write. If the removals are intended, re-run with --allow-removals.\n' +
+        '  If they are not, your source database is probably missing content it should have.\n',
+    )
+    await payload.db.destroy?.()
+    process.exit(1)
+  }
 }
 
 if (!COMMIT) {

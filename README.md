@@ -402,6 +402,15 @@ Four things it handles that a database copy would get wrong:
   matching on title plus start date, since two courses share a title, so a re-run
   updates instead of duplicating.
 
+**The import refuses to shrink an array.** If the incoming data has fewer rows than
+the target already holds, it lists the losses and stops; `--allow-removals` proceeds
+when the deletion is intended. This exists because of a real incident: a bug turned
+each video tile object into a dangling reference, the array arrived as nulls, and the
+home page's three videos were deleted — in the source database first, then
+propagated to production. Every check in place at the time passed, because they all
+compared the source against itself *after* it was already damaged. Comparing against
+the target is what catches that.
+
 Media filenames are matched on the stem with any `-N` suffix removed: seeding from
 a machine that already has `public/media` makes Payload's collision check store
 `all-1.webp` where local has `all.webp`.
