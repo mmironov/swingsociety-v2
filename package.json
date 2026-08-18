@@ -21,7 +21,7 @@
     "generate:importmap": "payload generate:importmap",
     "seed": "tsx --env-file=.env src/seed/run.ts",
     "seed:fresh": "tsx --env-file=.env src/seed/run.ts --fresh",
-    "seed:remote": "node scripts/require-env-file.mjs .env.production.local && tsx --env-file=.env.production.local src/seed/run.ts",
+    "seed:remote": "node scripts/require-env-file.mjs .env.production.local && NODE_ENV=production tsx --env-file=.env.production.local src/seed/run.ts",
     "video:prepare": "tsx src/seed/prepare-videos.ts"
   },
   "dependencies": {
