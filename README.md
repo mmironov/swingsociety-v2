@@ -352,6 +352,39 @@ Without it, a forgotten password has to be reset from the command line.
 
 ---
 
+## Moving content from local to production
+
+`npm run seed` and `npm run seed:remote` load the *design's* baseline content and
+fill only what is empty. Neither copies your local database — so anything you
+entered in the local admin panel stays local. Two scripts move it:
+
+```bash
+npm run content:export /tmp/content.json   # reads .env        (local Docker)
+npm run content:import /tmp/content.json   # reads .env.production.local (Neon)
+```
+
+The import is a **dry run unless you pass `--commit`**, and prints exactly which
+rows it would update or create first.
+
+Three things it handles that a database copy would get wrong:
+
+- **Page relationships travel as slugs.** Row ids differ between databases, so a
+  copied id points at an unrelated page. Unresolvable slugs become null, and the
+  dry run lists them.
+- **Localized arrays keep their ids.** Writing the English pass without the ids
+  Payload assigned during the Bulgarian pass makes it create fresh rows and orphan
+  the Bulgarian text.
+- **Nothing is deleted.** The home page global references courses by id, so the
+  seeded course is updated in place rather than replaced. Courses match on title
+  plus start date — title alone collides, since two are both called
+  "Swing танци за начинаещи" — so a second run updates instead of duplicating.
+
+It covers Courses and Reviews. Media is deliberately excluded: those files live in
+blob storage under names the seed assigned, and re-uploading would duplicate them.
+
+Content written this way does **not** appear on the deployed site until you
+redeploy, for the same reason the seed does not — see step 3 of First deploy.
+
 ## Photos and cropping
 
 All nine photographs are loaded. Every frame that shows them crops — the team
