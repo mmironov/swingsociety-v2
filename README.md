@@ -265,7 +265,17 @@ panel's preview links, so it must match the real domain.
 
 **The order matters, and not in the obvious way.** Do it in exactly these steps:
 
-**1. Import the repo in Vercel and deploy.** The build runs `payload migrate`,
+**1. Import the repo in Vercel and deploy.** Set the build command to
+`npm run build:production` — Vercel's default is `npm run build`, which skips both
+the migration and the import-map regeneration.
+
+The build starts with `scripts/check-env.mjs`, which reports every missing or
+wrong environment variable at once rather than failing on the first one. It also
+catches things nothing else would: a `NEXT_PUBLIC_SERVER_URL` still pointing at
+localhost (inlined into the bundle, so it would silently ship a site whose
+canonical URLs and share image point at your laptop), a trailing slash, a
+`PAYLOAD_SECRET` shorter than 32 characters, an unpooled Neon host, and a missing
+`BLOB_READ_WRITE_TOKEN`. The build runs `payload migrate`,
 which creates the schema, then prerenders against a database that has tables but
 no content. This works — verified — and gives you 8 pages instead of the usual
 16, since there are no CMS pages to prerender yet. The site renders a sparse but

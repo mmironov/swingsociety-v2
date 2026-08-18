@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:production": "payload generate:importmap && payload migrate && next build",
+    "build:production": "node scripts/check-env.mjs && payload generate:importmap && payload migrate && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
