@@ -60,7 +60,8 @@ npm run dev
 | `npm run build:production` | `payload migrate` then build — this is Vercel's build command        |
 | `npm start`                | Serve the build                                                     |
 | `npm run seed`             | Fill anything empty; never overwrites edited content                 |
-| `npm run seed:fresh`       | **Deletes all content** and reseeds — local development only         |
+| `npm run seed:fresh`       | **Deletes all content** and reseeds — refuses a remote database       |
+| `npm run seed:remote`      | Seed using `.env.production.local`, so `.env` keeps pointing at Docker |
 | `npm run video:prepare`    | Transcode clips in `assets-inbox/` to web-ready mp4 + poster frames  |
 | `npm run db:up` / `:down`  | Start / stop the local Postgres                                     |
 | `npm run db:reset`         | Drop the local database volume and start clean                      |
@@ -271,11 +272,35 @@ no content. This works — verified — and gives you 8 pages instead of the usu
 valid skeleton: the hero shows the `defaultValue` from the config, empty sections
 hide themselves, and the review tiles show their dashed placeholders.
 
-**2. Seed the content.** Point `DATABASE_URI` at Neon locally **and set
-`BLOB_READ_WRITE_TOKEN`**, then run `npm run seed` once. The photos and videos in
-`assets-inbox/` upload through Payload, so with the token set they land in blob
-storage on the way through. It only fills what is empty, so it is safe against a
-live database — but `seed:fresh` is not.
+**2. Seed the content.** Put the production values in a separate file rather
+than editing `.env` — otherwise `npm run dev` quietly starts talking to
+production later:
+
+```bash
+cp .env.example .env.production.local
+```
+
+Fill in the Neon `DATABASE_URI`, the production `PAYLOAD_SECRET`, the real
+`NEXT_PUBLIC_SERVER_URL` and `BLOB_READ_WRITE_TOKEN`, then:
+
+```bash
+npm run seed:remote
+```
+
+(`.env.production.local` is gitignored by the `.env*.local` rule.)
+
+The photos and videos in `assets-inbox/` upload through Payload, so with the
+token set they land in blob storage on the way through. The seed only fills what
+is empty, so it is safe to re-run against a live database.
+
+`seed:fresh` is **not** safe there — it deletes every page, course, event,
+teacher, review and media record. It now refuses to run against a non-local
+database unless you pass `ALLOW_REMOTE_WIPE=1`, and prints the target host (never
+the credentials) so you can see what you are pointed at.
+
+You will see a Postgres warning that `sslmode=require` is currently treated as
+`verify-full`. It is advisory, about a future `pg` major, and Neon connections
+work as-is.
 
 **3. Redeploy.** In Vercel: project → Deployments → latest → **Redeploy**. No
 commit needed.

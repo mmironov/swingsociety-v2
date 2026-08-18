@@ -44,6 +44,16 @@ const log = (message: string) => console.log(`  ${message}`)
  * inside the Next server. Treats an unparseable URI as remote — the warning is
  * harmless when wrong in that direction.
  */
+/** Host and database name only — never the credentials in DATABASE_URI. */
+const describeDatabase = (): string => {
+  try {
+    const url = new URL(process.env.DATABASE_URI ?? '')
+    return `${url.hostname}${url.pathname}`
+  } catch {
+    return '(unparseable DATABASE_URI)'
+  }
+}
+
 const isRemoteDatabase = (): boolean => {
   const uri = process.env.DATABASE_URI ?? ''
   try {
@@ -1447,7 +1457,25 @@ const wipe = async (payload: Payload) => {
 /* ══ main ══════════════════════════════════════════════════════════════════ */
 
 const main = async () => {
+  // `seed:fresh` deletes every content record, and one flag is all that separates
+  // it from `seed`. Against a live database that mistake is unrecoverable here.
+  if (FRESH && isRemoteDatabase() && process.env.ALLOW_REMOTE_WIPE !== '1') {
+    console.error(`
+✗ Refusing to run --fresh against a non-local database.
+
+  Target: ${describeDatabase()}
+
+  --fresh DELETES every page, course, event, teacher, review and media record
+  before reseeding. On a live site that cannot be undone from here.
+
+  To load content without deleting anything:  npm run seed
+  If you really mean it:                      ALLOW_REMOTE_WIPE=1 npm run seed:fresh
+`)
+    process.exit(1)
+  }
+
   console.log(`\n▸ Seeding Swing Society${FRESH ? ' (fresh — existing content will be deleted)' : ''}\n`)
+  if (isRemoteDatabase()) log(`target: ${describeDatabase()}`)
   const payload = await getPayload({ config })
 
   if (FRESH) await wipe(payload)
