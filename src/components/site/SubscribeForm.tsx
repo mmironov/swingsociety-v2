@@ -24,6 +24,8 @@ export const SubscribeForm = ({
 }: Props) => {
   const [email, setEmail] = useState('')
   const [state, setState] = useState<State>('idle')
+  // Honeypot. Left empty by people, filled in by bots that complete every field.
+  const [honeypot, setHoneypot] = useState('')
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -40,7 +42,7 @@ export const SubscribeForm = ({
       const response = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: value, locale, source: window.location.pathname }),
+        body: JSON.stringify({ email: value, locale, source: window.location.pathname, website: honeypot }),
       })
       setState(response.ok ? 'done' : 'error')
     } catch {
@@ -82,6 +84,26 @@ export const SubscribeForm = ({
         }}
         aria-invalid={state === 'invalid'}
       />
+
+      {/*
+        Hidden from people in three ways at once, because any single one of them
+        can be defeated: off-screen rather than display:none (some bots skip
+        undisplayed inputs), aria-hidden so screen readers never announce it, and
+        tabIndex -1 so keyboard users cannot land on it. autoComplete off keeps a
+        password manager from helpfully filling it in.
+      */}
+      <div aria-hidden="true" className="visually-hidden">
+        <label htmlFor="subscribe-website">Website</label>
+        <input
+          id="subscribe-website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
 
       <button className="btn btn-primary signup__submit" type="submit" disabled={state === 'sending'}>
         {state === 'sending' ? t('signupSending', locale) : buttonLabel || t('emailLabel', locale)}

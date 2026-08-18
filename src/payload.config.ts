@@ -6,6 +6,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { bg } from '@payloadcms/translations/languages/bg'
 import { en } from '@payloadcms/translations/languages/en'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { resendAdapter } from '@payloadcms/email-resend'
 import sharp from 'sharp'
 
 import { Users } from './collections/Users'
@@ -52,9 +53,32 @@ if (blobToken && blobToken.name !== 'BLOB_READ_WRITE_TOKEN') {
   console.info(`[storage] using Vercel Blob token from ${blobToken.name}`)
 }
 
+/**
+ * Outgoing email, only when a key is present.
+ *
+ * Without an adapter Payload writes emails to the console, which is fine locally
+ * and useless in production: the only mail this site sends is a password reset, so
+ * a forgotten password means resetting it from a command line against the live
+ * database.
+ *
+ * Resend will not deliver from an unverified domain. Until swingsociety.bg is
+ * verified there, EMAIL_FROM_ADDRESS can be left at Resend's onboarding sender,
+ * which delivers to the account owner's address only — enough to test that the
+ * flow works, not enough to mail anyone else.
+ */
+const resendKey = env('RESEND_API_KEY')
+const email = resendKey
+  ? resendAdapter({
+      apiKey: resendKey,
+      defaultFromAddress: env('EMAIL_FROM_ADDRESS') ?? 'onboarding@resend.dev',
+      defaultFromName: env('EMAIL_FROM_NAME') ?? 'Swing Society',
+    })
+  : undefined
+
 export default buildConfig({
   serverURL: env('NEXT_PUBLIC_SERVER_URL'),
   secret: env('PAYLOAD_SECRET') as string,
+  ...(email ? { email } : {}),
 
   admin: {
     user: Users.slug,

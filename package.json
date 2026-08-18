@@ -22,12 +22,13 @@
     "seed": "tsx --env-file=.env src/seed/run.ts",
     "seed:fresh": "tsx --env-file=.env src/seed/run.ts --fresh",
     "content:export": "tsx --env-file=.env src/scripts/export-content.ts",
-    "content:import": "NODE_ENV=production tsx --env-file=.env.production.local src/scripts/import-content.ts",
-    "seed:remote": "node scripts/require-env-file.mjs .env.production.local && NODE_ENV=production tsx --env-file=.env.production.local src/seed/run.ts",
+    "content:import": "NODE_ENV=production tsx --env-file=.env.seed.local src/scripts/import-content.ts",
+    "seed:remote": "node scripts/require-env-file.mjs .env.seed.local && NODE_ENV=production tsx --env-file=.env.seed.local src/seed/run.ts",
     "video:prepare": "tsx src/seed/prepare-videos.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.88.0",
+    "@payloadcms/email-resend": "^3.88.0",
     "@payloadcms/next": "3.88.0",
     "@payloadcms/richtext-lexical": "3.88.0",
     "@payloadcms/storage-vercel-blob": "^3.88.0",

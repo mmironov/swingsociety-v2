@@ -1,7 +1,7 @@
 /**
  * Fails with an explanation when an --env-file target is missing.
  *
- * Node's own message for this is `node: .env.production.local: not found`, which
+ * Node's own message for this is `node: .env.seed.local: not found`, which
  * names the file but not what it is, why it is absent, or how to create it — and
  * it is absent by design, since the file holds production credentials and is
  * gitignored.

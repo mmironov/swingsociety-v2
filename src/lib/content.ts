@@ -129,6 +129,41 @@ export const getPageBySlug = cache(async (slug: string, locale: Locale): Promise
   return docs[0] ?? null
 })
 
+/**
+ * Published pages as `{ bg, en, updatedAt }`, so the sitemap can declare each
+ * URL's counterpart in the other language.
+ *
+ * Slugs are localized — /bg/lindi-hop and /en/lindy-hop are one document — so the
+ * pairing has to come from the document, not from a URL transformation.
+ */
+export const getPageSlugPairs = cache(
+  async (): Promise<{ bg: string; en: string; updatedAt?: string }[]> => {
+    const payload = await client()
+    const query = (locale: Locale) =>
+      payload.find({
+        collection: 'pages',
+        locale,
+        where: { _status: { equals: 'published' } },
+        limit: 500,
+        depth: 0,
+        select: { slug: true, updatedAt: true },
+      })
+
+    const [bg, en] = await Promise.all([query('bg'), query('en')])
+    const enById = new Map(en.docs.map((doc) => [doc.id, doc.slug]))
+
+    return bg.docs
+      .map((doc) => ({
+        bg: doc.slug ?? '',
+        // `fallback: true` means an untranslated page reports the Bulgarian slug,
+        // which is correct: that is the URL the English site actually serves.
+        en: enById.get(doc.id) ?? doc.slug ?? '',
+        updatedAt: doc.updatedAt ?? undefined,
+      }))
+      .filter((pair) => pair.bg && pair.en)
+  },
+)
+
 /** Every published page slug, for `generateStaticParams` and the sitemap. */
 export const getAllPageSlugs = cache(async (locale: Locale): Promise<string[]> => {
   const payload = await client()

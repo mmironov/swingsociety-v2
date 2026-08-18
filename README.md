@@ -23,6 +23,15 @@ npm install
 cp .env.example .env
 ```
 
+⚠️ **Never put production values in `.env.production.local`.** Next loads
+`.env.$NODE_ENV.local` *before* `.env`, and `next build` sets
+`NODE_ENV=production` — so that filename silently redirects every local
+`npm run build` and `npm start` at the live database, the live blob store and the
+production URL, with nothing in the output saying so. Production values for seeding
+belong in **`.env.seed.local`**, which Next never auto-loads and which the
+`--env-file` scripts read explicitly. `npm run build:production` warns if the
+trap file reappears.
+
 Generate a `PAYLOAD_SECRET` and paste it into `.env`:
 
 ```bash
@@ -61,7 +70,7 @@ npm run dev
 | `npm start`                | Serve the build                                                     |
 | `npm run seed`             | Fill anything empty; never overwrites edited content                 |
 | `npm run seed:fresh`       | **Deletes all content** and reseeds — refuses a remote database       |
-| `npm run seed:remote`      | Seed using `.env.production.local`, so `.env` keeps pointing at Docker |
+| `npm run seed:remote`      | Seed using `.env.seed.local`, so `.env` keeps pointing at Docker |
 | `npm run video:prepare`    | Transcode clips in `assets-inbox/` to web-ready mp4 + poster frames  |
 | `npm run db:up` / `:down`  | Start / stop the local Postgres                                     |
 | `npm run db:reset`         | Drop the local database volume and start clean                      |
@@ -297,7 +306,7 @@ than editing `.env` — otherwise `npm run dev` quietly starts talking to
 production later:
 
 ```bash
-cp .env.example .env.production.local
+cp .env.example .env.seed.local
 ```
 
 Fill in the Neon `DATABASE_URI`, the production `PAYLOAD_SECRET`, the real
@@ -307,7 +316,7 @@ Fill in the Neon `DATABASE_URI`, the production `PAYLOAD_SECRET`, the real
 npm run seed:remote
 ```
 
-(`.env.production.local` is gitignored by the `.env*.local` rule.)
+(`.env.seed.local` is gitignored by the `.env*.local` rule.)
 
 The photos and videos in `assets-inbox/` upload through Payload, so with the
 token set they land in blob storage on the way through. The seed only fills what
@@ -339,16 +348,18 @@ reach the live site within seconds, which is the whole point of the setup.
 Finally, open `/admin` and create your real user. The seed's admin account uses
 `SEED_ADMIN_PASSWORD`; don't carry `changeme` into production.
 
-### 6. Email (not yet configured)
+### 6. Email
 
-Payload logs password-reset emails to the console instead of sending them. Before
-handing the CMS to people who might forget a password, add an adapter:
+`@payloadcms/email-resend` is wired up and switches on when `RESEND_API_KEY` is
+present; without it Payload writes emails to the log. The only mail this site sends
+is the CMS password reset, so without a key a forgotten password has to be reset
+from the command line against the live database.
 
-```bash
-npm i @payloadcms/email-resend
-```
+Resend will not send from an unverified domain. Until `swingsociety.bg` is verified
+there, leave `EMAIL_FROM_ADDRESS` empty and it falls back to Resend's onboarding
+sender, which delivers only to the Resend account owner — enough to prove the reset
+flow works, not enough to mail anyone else.
 
-Without it, a forgotten password has to be reset from the command line.
 
 ---
 
@@ -360,7 +371,7 @@ entered in the local admin panel stays local. Two scripts move it:
 
 ```bash
 npm run content:export /tmp/content.json   # reads .env        (local Docker)
-npm run content:import /tmp/content.json   # reads .env.production.local (Neon)
+npm run content:import /tmp/content.json   # reads .env.seed.local (Neon)
 ```
 
 The import is a **dry run unless you pass `--commit`**, and prints exactly which
@@ -447,6 +458,30 @@ Two places consume it:
 
 For anything longer than a minute or two, prefer a YouTube link: no bandwidth
 cost, and adaptive quality on a phone.
+
+## SEO and the sign-up form
+
+`src/app/robots.ts` and `src/app/sitemap.ts` generate `/robots.txt` and
+`/sitemap.xml`. The sitemap is built from the CMS, so publishing a page adds it
+with no code change, and every entry carries `alternates.languages` — that is how
+Google learns `/bg/lindi-hop` and `/en/lindy-hop` are one page in two languages
+rather than duplicate content. The pairing comes from the documents, since slugs
+are localized and cannot be derived from each other.
+
+Both files live at the **app root**, not in the `(site)` route group. `sitemap.ts`
+works in either place, but `robots.ts` inside a route group is silently ignored —
+it compiles, and `/robots.txt` simply never appears in the route table.
+
+`/api/subscribe` is a public POST endpoint, so it carries four cheap defences: a
+cross-site `Origin` is rejected, bodies over 2KB are refused, a honeypot field
+answers "ok" without storing anything, and requests are rate limited per IP. The
+limit is deliberately loose (10 per 10 minutes) because the key is an IP and a
+studio's wifi or a carrier's NAT puts many real people behind one — turning away
+the evening's second genuine sign-up costs more than the abuse it prevents. The
+limiter is in-memory, so each serverless instance counts separately: a speed bump,
+not a guarantee. Shared state (Vercel KV, Upstash) would be the fix if this list
+ever becomes worth attacking. No IP addresses are stored — they are in-memory
+keys only.
 
 ## Known gaps
 

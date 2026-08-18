@@ -11,6 +11,8 @@
  * image and the admin panel's preview links — so getting it wrong does not fail
  * the build, it silently ships a site that points at the wrong origin.
  */
+import { existsSync } from 'fs'
+
 const onVercel = process.env.VERCEL === '1'
 const errors = []
 const warnings = []
@@ -87,10 +89,31 @@ const blobVar = process.env.BLOB_READ_WRITE_TOKEN?.trim()
         name.endsWith('BLOB_READ_WRITE_TOKEN') && /^vercel_blob_rw_/i.test(value?.trim() ?? ''),
     )?.[0]
 
+if (onVercel && !process.env.RESEND_API_KEY?.trim()) {
+  warnings.push(
+    'RESEND_API_KEY is not set, so Payload will write emails to the log instead of sending them. The only mail this site sends is the CMS password reset — without a key, a forgotten password has to be reset from the command line against the live database.',
+  )
+}
+
 if (onVercel && !blobVar) {
   warnings.push('No Vercel Blob token found. Uploads will be written to the local filesystem, which on Vercel is ephemeral and read-only at runtime: uploading through /admin will fail, and any existing file disappears on the next deploy.\n      Create a Blob store (Storage → Create → Blob) and connect it to this project. Any variable name ending in BLOB_READ_WRITE_TOKEN is accepted, so a prefix is fine.')
 } else if (onVercel && blobVar !== 'BLOB_READ_WRITE_TOKEN') {
   console.log(`  note: blob token found in ${blobVar}`)
+}
+
+/**
+ * A file named .env.production.local silently wins over .env in any production
+ * build, because Next loads `.env.$NODE_ENV.local` first and `next build` sets
+ * NODE_ENV=production. Holding production credentials there means every local
+ * `npm run build` and `npm start` quietly points at the live database and the live
+ * blob store. This project keeps those values in .env.seed.local instead, which
+ * Next never auto-loads.
+ */
+if (!onVercel && existsSync('.env.production.local')) {
+  warnings.push(
+    '.env.production.local exists and Next loads it BEFORE .env in any production build — so `npm run build` and `npm start` will use whatever is in it, not your local .env.\n' +
+      '      If it holds production values, rename it to .env.seed.local (still gitignored, never auto-loaded) and use it via --env-file.',
+  )
 }
 
 for (const w of warnings) console.warn(`\n⚠  ${w}`)
