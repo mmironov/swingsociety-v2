@@ -5,6 +5,7 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { bg } from '@payloadcms/translations/languages/bg'
 import { en } from '@payloadcms/translations/languages/en'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import sharp from 'sharp'
 
 import { Users } from './collections/Users'
@@ -92,4 +93,45 @@ export default buildConfig({
       fileSize: 50_000_000,
     },
   },
+
+  plugins: [
+    /**
+     * Uploads go to Vercel Blob in production and stay on the local filesystem
+     * in development, decided by whether the token is present.
+     *
+     * `alwaysInsertFields` is the important one. The plugin adds a `prefix`
+     * column to `media`, and without this flag it would only add it when the
+     * plugin is enabled — so the schema would differ between here and
+     * production, and a migration generated locally would be missing a column
+     * production expects. With it set, both environments carry the same shape.
+     * (Payload v4 makes this the default.)
+     *
+     * Vercel's filesystem is ephemeral and read-only at runtime, so this is not
+     * optional there: without it, uploads through /admin fail, and anything
+     * already uploaded disappears on the next deploy.
+     */
+    vercelBlobStorage({
+      enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      alwaysInsertFields: true,
+      collections: {
+        media: {
+          /**
+           * Serve straight from the blob CDN instead of proxying every image
+           * through Payload's own /api/media/file route.
+           *
+           * Without this, each image request wakes a serverless function that
+           * fetches the file from blob storage and streams it on — paying for a
+           * function invocation to hand back a public file. The adapter only
+           * supports `access: 'public'` blobs, and the Media collection is
+           * `read: anyone`, so routing through Payload adds cost without adding
+           * privacy. The URL stored in `media.url` becomes the absolute blob
+           * address. The site uses plain <img>, so no next/image host config is
+           * needed for it.
+           */
+          disablePayloadAccessControl: true,
+        },
+      },
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    }),
+  ],
 })

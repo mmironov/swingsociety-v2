@@ -57,12 +57,16 @@ npm run dev
 | -------------------------- | ------------------------------------------------------------------- |
 | `npm run dev`              | Dev server, schema auto-synced from the Payload config               |
 | `npm run build`            | Production build (prerenders every page in both languages)           |
+| `npm run build:production` | `payload migrate` then build — this is Vercel's build command        |
 | `npm start`                | Serve the build                                                     |
 | `npm run seed`             | Fill anything empty; never overwrites edited content                 |
 | `npm run seed:fresh`       | **Deletes all content** and reseeds — local development only         |
 | `npm run video:prepare`    | Transcode clips in `assets-inbox/` to web-ready mp4 + poster frames  |
 | `npm run db:up` / `:down`  | Start / stop the local Postgres                                     |
 | `npm run db:reset`         | Drop the local database volume and start clean                      |
+| `npm run migrate:create`   | Generate a migration from your config changes                       |
+| `npm run migrate`          | Apply pending migrations                                            |
+| `npm run migrate:status`   | Which migrations have run                                           |
 | `npm run generate:types`   | Regenerate `src/payload-types.ts` after changing a collection        |
 | `npm run generate:importmap` | Regenerate the admin import map after adding an admin component    |
 | `npm run typecheck`        | `tsc --noEmit`                                                      |
@@ -158,45 +162,89 @@ open many short-lived connections; the pooled endpoint is what survives that.
 ### 2. Migrations
 
 Development syncs the schema automatically (`push: true`). Production does not —
-it applies migrations at build time, so a cold start never tries to alter tables.
+it applies migrations at build time, so a cold serverless start never tries to
+alter tables.
 
-Create a migration whenever you change a collection or global:
-
-```bash
-npm run payload migrate:create
-```
-
-Commit the file from `src/migrations/`. Then set Vercel's build command to:
+The initial migration is committed (`src/migrations/20260818_153035_initial.ts`:
+82 tables, 306 indexes, 215 foreign keys). Set Vercel's **build command** to:
 
 ```bash
-npm run payload migrate && npm run build
+npm run build:production
 ```
+
+Create a new migration whenever you change a collection, global or field:
+
+```bash
+npm run migrate:create
+```
+
+⚠️ **Run `migrate:create` against an empty database.** It generates SQL by
+diffing your config against the database it connects to, so pointed at your
+already-synced dev database it produces an empty migration and you get no
+warning. Create a scratch database first:
+
+```bash
+docker exec swingsociety-db psql -U swingsociety -d postgres -c "CREATE DATABASE scratch;"
+```
+
+Then run `migrate:create` with `DATABASE_URI` pointing at `scratch`, and drop it
+afterwards.
+
+⚠️ **Check multi-line default values in the generated file.** `migrate:create`
+indents the SQL it writes by two spaces per line — including lines that fall
+*inside* a quoted string literal. The home page's hero heading default is three
+lines, and it came out as `'Танцувай\n  като през\n  30-те.'` with two spaces
+injected into the value. Search the generated migration for string literals
+spanning more than one line and dedent them by hand:
+
+```bash
+python3 -c "
+import re, sys
+s = open(sys.argv[1]).read()
+for m in re.finditer(r\"'(?:[^']|'')*'\", s):
+    if '\n' in m.group(0): print(repr(m.group(0)))
+" src/migrations/<your-migration>.ts
+```
+
+To verify a migration reproduces what the config actually wants, build one
+database with `migrate` and another with dev-mode `push`, then diff
+`information_schema.columns`, `pg_indexes` and `pg_constraint` between them. They
+should match exactly.
 
 ### 3. File storage
 
-Uploads currently go to `public/media` on disk. **Vercel's filesystem is
-ephemeral**, so images uploaded through the admin panel there will disappear on
-the next deploy. Before going live, add a storage adapter:
+Configured, with one thing to do: **create a Blob store** in the Vercel
+dashboard and link it to the project. That sets `BLOB_READ_WRITE_TOKEN`, and the
+token is the switch:
 
-```bash
-npm i @payloadcms/storage-vercel-blob
-```
+| `BLOB_READ_WRITE_TOKEN` | Where uploads go | URL in `media.url` |
+| --- | --- | --- |
+| unset (local dev) | `public/media` on disk | `/api/media/file/all.webp` |
+| set (production) | Vercel Blob | `https://<store>.public.blob.vercel-storage.com/all.webp` |
 
-```ts
-// src/payload.config.ts
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+This matters because **Vercel's filesystem is ephemeral and read-only at
+runtime**. Without the token, uploads through `/admin` fail and anything already
+there disappears on the next deploy.
 
-plugins: [
-  vercelBlobStorage({
-    collections: { media: true },
-    token: process.env.BLOB_READ_WRITE_TOKEN,
-  }),
-]
-```
+Two options in `src/payload.config.ts` are deliberate and worth not undoing:
 
-Create a Blob store in the Vercel dashboard; it sets `BLOB_READ_WRITE_TOKEN`
-for you. `@payloadcms/storage-s3` works the same way if you would rather use S3
-or Cloudflare R2.
+- **`alwaysInsertFields: true`** — the plugin adds a `prefix` column to `media`,
+  and by default only adds it when the plugin is enabled. Since it is disabled
+  locally (no token) and enabled in production, the schema would differ between
+  the two, and a migration generated locally would be missing a column
+  production expects. Payload v4 makes this the default.
+- **`disablePayloadAccessControl: true`** — serves images straight from the blob
+  CDN. Without it Payload proxies every image request through
+  `/api/media/file/*`, meaning a serverless function invocation to hand back a
+  public file. The adapter only supports `access: 'public'` blobs and the Media
+  collection is `read: anyone`, so proxying adds cost without adding privacy.
+
+`@payloadcms/storage-s3` works the same way for S3 or Cloudflare R2.
+
+Note that the site renders plain `<img>`, not `next/image`: Payload pre-generates
+the five sizes at upload time and `mediaUrl()` picks the smallest that covers the
+slot. So there is **no Vercel Image Optimization cost** — and no need to add the
+blob host to `remotePatterns` in `next.config.mjs`.
 
 ### 4. Environment variables
 
@@ -207,6 +255,7 @@ Set these in the Vercel project (all environments):
 | `DATABASE_URI`           | Neon **pooled** connection string                   |
 | `PAYLOAD_SECRET`         | A fresh 32-byte random hex string — not the local one |
 | `NEXT_PUBLIC_SERVER_URL` | `https://swingsociety.bg` (no trailing slash)       |
+| `BLOB_READ_WRITE_TOKEN`  | Set for you when you link a Vercel Blob store       |
 
 `NEXT_PUBLIC_SERVER_URL` drives canonical URLs, share images and the admin
 panel's preview links, so it must match the real domain.
@@ -217,8 +266,10 @@ Push the repo, import it in Vercel, deploy. Then open `/admin` and create the
 first user — the seed's admin account only exists in your local database.
 
 To load the starting content into production, point `DATABASE_URI` at Neon
-locally and run `npm run seed` once. It only fills what is empty, so it is safe
-to run against a live database — but `seed:fresh` is not.
+locally **and set `BLOB_READ_WRITE_TOKEN`**, then run `npm run seed` once. The
+photos and videos in `assets-inbox/` upload through Payload, so with the token
+set they land in blob storage on the way through. It only fills what is empty, so
+it is safe to run against a live database — but `seed:fresh` is not.
 
 ### 6. Email (not yet configured)
 
@@ -299,8 +350,9 @@ cost, and adaptive quality on a phone.
 - **The beginners and tap pages keep their video placeholders.** None of the
   clips supplied is class footage or tap, so the dashed frames are honest rather
   than filled with something unrelated.
-- **Self-hosted video costs bandwidth.** Four clips total ~30 MB. Nothing
-  downloads until a visitor presses play, but on Vercel this needs the blob
-  storage below, and YouTube remains the cheaper answer for longer films.
+- **Self-hosted video costs bandwidth.** Four clips total ~30 MB, served from
+  Vercel Blob, whose data transfer is metered. Nothing downloads until a visitor
+  presses play (`preload="metadata"`), but YouTube remains the cheaper answer for
+  anything longer.
 - **A CMS page cannot use the slug `schedule`** — that route belongs to the
   schedule page.
