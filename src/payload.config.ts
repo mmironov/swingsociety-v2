@@ -162,6 +162,17 @@ export default buildConfig({
       alwaysInsertFields: true,
       collections: {
         media: {
+          // `alwaysInsertFields` alone is NOT enough, despite its name: the plugin
+          // only honours it on its disabled path. With a token present it calls
+          // getFields({ prefix: options.prefix }) without the flag, and an
+          // undefined prefix means the field is skipped — so the schema had
+          // `prefix` locally (plugin off) and lacked it in production (plugin on),
+          // the exact drift alwaysInsertFields was meant to prevent. This is a
+          // per-collection option, and setting it satisfies the
+          // `typeof prefix !== 'undefined'` check on both paths. Empty string
+          // means no prefix, matching the existing blob keys and the column's
+          // current default.
+          prefix: '',
           /**
            * Serve straight from the blob CDN instead of proxying every image
            * through Payload's own /api/media/file route.

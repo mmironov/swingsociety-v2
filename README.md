@@ -188,17 +188,30 @@ Create a new migration whenever you change a collection, global or field:
 npm run migrate:create
 ```
 
-⚠️ **Run `migrate:create` against an empty database.** It generates SQL by
-diffing your config against the database it connects to, so pointed at your
-already-synced dev database it produces an empty migration and you get no
-warning. Create a scratch database first:
+⚠️ **`migrate:create` diffs against the committed snapshot, not the database.**
+Each migration writes a `.json` schema snapshot beside it, and the next
+`migrate:create` compares your config to that file — the database it connects to is
+not consulted for the diff. So the output depends on what is committed, and a
+database that has drifted from the history will not be reflected. Check the
+generated SQL before trusting it.
 
-```bash
-docker exec swingsociety-db psql -U swingsociety -d postgres -c "CREATE DATABASE scratch;"
+⚠️ **A dev-mode push poisons production migrations, silently.** Pushing to a
+database (any `getPayload()` call with `NODE_ENV` unset) writes a
+`payload-migrations` row with `batch = -1`. From then on `payload migrate` asks
+"data loss will occur, proceed?" — and in a non-interactive shell like the Vercel
+build, `prompts` returns nothing and the code calls **`process.exit(0)`**. Exit
+zero. So `npm run build:production` skips every migration and builds anyway,
+against a schema that never got updated. Nothing in the log says a migration was
+skipped.
+
+If that row exists, delete it before deploying a migration:
+
+```sql
+delete from payload_migrations where name = 'dev' and batch = -1;
 ```
 
-Then run `migrate:create` with `DATABASE_URI` pointing at `scratch`, and drop it
-afterwards.
+Only do that once you know what the push changed — it is a marker that the schema
+was altered outside the migration history.
 
 ⚠️ **Check multi-line default values in the generated file.** `migrate:create`
 indents the SQL it writes by two spaces per line — including lines that fall

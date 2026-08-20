@@ -1459,6 +1459,33 @@ a.btn:hover {
   font-size: 15px;
   color: var(--color-neutral-600);
 }
+/* Embedded Google form or map. Unlike .embed this has no aspect ratio: a form's
+   height is set by its own content, which the iframe cannot report back across
+   origins, so the height comes from the CMS field. */
+.block__embed {
+  border-radius: 32px;
+  overflow: hidden;
+  background: #fff; /* Google Forms renders on white; a dark gap looks broken */
+  border: 1px solid var(--color-divider);
+}
+.block__embed iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+}
+.block__embed-fallback {
+  padding: 14px 20px;
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-neutral-600);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-divider);
+}
+.block__embed-fallback a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
 .embed {
   position: relative;
   aspect-ratio: 16 / 9;

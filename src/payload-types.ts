@@ -240,6 +240,23 @@ export interface Page {
             blockName?: string | null;
             blockType: 'video';
           }
+        | {
+            /**
+             * Адресът на Google формата или картата. За форма: отвори формата → „Изпрати“ → иконата < > → копирай адреса от src. Може да е различен за български и английски.
+             */
+            url: string;
+            /**
+             * Какво е вграденото — чете се от незрящи посетители, които иначе чуват само „рамка“.
+             */
+            title: string;
+            /**
+             * Google формите не могат да си кажат височината, затова се задава тук. Ако формата се реже или остава празно място, промени числото.
+             */
+            height?: number | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'embed';
+          }
       )[]
     | null;
   cta: {
@@ -761,6 +778,15 @@ export interface PagesSelect<T extends boolean = true> {
               file?: T;
               poster?: T;
               caption?: T;
+              id?: T;
+              blockName?: T;
+            };
+        embed?:
+          | T
+          | {
+              url?: T;
+              title?: T;
+              height?: T;
               id?: T;
               blockName?: T;
             };

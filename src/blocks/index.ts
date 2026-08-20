@@ -140,6 +140,78 @@ const VideoBlock: Block = {
   ],
 }
 
+/**
+ * Hosts an iframe may point at.
+ *
+ * An iframe src that any editor can set is a way to put someone else's page
+ * inside ours, wearing our design — so it is limited to Google's own form, map
+ * and calendar hosts, which is what this block exists for. Video has its own
+ * block; YouTube does not belong here.
+ */
+const EMBED_HOSTS = [
+  'docs.google.com',
+  'forms.gle',
+  'calendar.google.com',
+  'www.google.com',
+  'maps.google.com',
+]
+
+const EmbedBlock: Block = {
+  slug: 'embed',
+  labels: { singular: 'Вградена форма или карта', plural: 'Вградени форми и карти' },
+  fields: [
+    {
+      name: 'url',
+      type: 'text',
+      label: 'Адрес',
+      required: true,
+      localized: true,
+      admin: {
+        description:
+          'Адресът на Google формата или картата. За форма: отвори формата → „Изпрати“ → иконата < > → копирай адреса от src. Може да е различен за български и английски.',
+      },
+      validate: (value: unknown) => {
+        if (typeof value !== 'string' || value.trim() === '') return 'Адресът е задължителен.'
+        let url: URL
+        try {
+          url = new URL(value.trim())
+        } catch {
+          return 'Това не е валиден адрес.'
+        }
+        if (url.protocol !== 'https:') return 'Адресът трябва да започва с https://'
+        if (!EMBED_HOSTS.includes(url.hostname)) {
+          return `Може да се вгражда само от: ${EMBED_HOSTS.join(', ')}. За видео използвай блока „Видео“.`
+        }
+        return true
+      },
+    },
+    {
+      name: 'title',
+      type: 'text',
+      label: 'Описание за екранни четци',
+      required: true,
+      localized: true,
+      defaultValue: 'Форма за записване',
+      admin: {
+        description:
+          'Какво е вграденото — чете се от незрящи посетители, които иначе чуват само „рамка“.',
+      },
+    },
+    {
+      name: 'height',
+      type: 'number',
+      label: 'Височина (пиксели)',
+      defaultValue: 1100,
+      min: 200,
+      max: 4000,
+      admin: {
+        description:
+          'Google формите не могат да си кажат височината, затова се задава тук. Ако формата се реже или остава празно място, промени числото.',
+      },
+    },
+  ],
+}
+
 export const pageBlocks: Block[] = [
   HeadingBlock,
   TextBlock,
@@ -147,4 +219,5 @@ export const pageBlocks: Block[] = [
   QuoteBlock,
   ImageBlock,
   VideoBlock,
+  EmbedBlock,
 ]

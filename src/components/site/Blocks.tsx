@@ -57,6 +57,31 @@ const VideoFrame = ({
   )
 }
 
+/**
+ * Normalizes a Google Forms URL to the embeddable variant.
+ *
+ * A plain /viewform sends `frame-ancestors 'none'` as report-only — framing
+ * works today, but Google is announcing intent, and report-only can become
+ * enforced without warning. Adding `embedded=true`, the documented embed path,
+ * drops that header entirely. So an editor who pastes the ordinary share link
+ * still gets a supported embed rather than one that breaks later.
+ */
+const embedSrc = (raw?: string | null): string | null => {
+  const value = raw?.trim()
+  if (!value) return null
+  try {
+    const url = new URL(value)
+    if (url.hostname === 'docs.google.com' && url.pathname.includes('/forms/')) {
+      url.searchParams.set('embedded', 'true')
+      // `usp=send_form` is share-link noise and does nothing in an embed.
+      url.searchParams.delete('usp')
+    }
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 const renderBlock = (block: Block, locale: Locale): React.ReactNode => {
   switch (block.blockType) {
     case 'heading':
@@ -113,6 +138,31 @@ const renderBlock = (block: Block, locale: Locale): React.ReactNode => {
           />
           {block.caption ? <figcaption className="block__caption">{block.caption}</figcaption> : null}
         </figure>
+      )
+    }
+
+    case 'embed': {
+      const src = embedSrc(block.url)
+      if (!src) return null
+      return (
+        <div className="block__embed">
+          <iframe
+            src={src}
+            title={block.title ?? ''}
+            height={block.height ?? 1100}
+            loading="lazy"
+            // Google Forms needs scripts and same-origin to submit; everything
+            // else — top-level navigation, popups, downloads — stays denied.
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          <p className="block__embed-fallback">
+            {t('embedFallback', locale)}{' '}
+            <a href={src} target="_blank" rel="noreferrer noopener">
+              {t('openInNewTab', locale)}
+            </a>
+          </p>
+        </div>
       )
     }
 

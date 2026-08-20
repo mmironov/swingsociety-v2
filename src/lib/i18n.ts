@@ -17,6 +17,11 @@ export const HTML_LANG: Record<Locale, string> = { bg: 'bg-BG', en: 'en' }
  */
 const STRINGS = {
   home: { bg: 'Начало', en: 'Home' },
+  openInNewTab: { bg: 'Отвори в нов таб', en: 'Open in a new tab' },
+  embedFallback: {
+    bg: 'Ако формата не се показва, отвори я директно:',
+    en: 'If the form does not appear, open it directly:',
+  },
   backHome: { bg: '← Начало', en: '← Home' },
   allDances: { bg: 'Всички танци', en: 'All dances' },
   schedule: { bg: 'График', en: 'Schedule' },
