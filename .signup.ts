@@ -39,7 +39,7 @@ const blocksFor = (locale: 'bg' | 'en', ids?: (string | null | undefined)[]) => 
       ...(ids?.[0] ? { id: ids[0] } : {}),
       url: FORM,
       title: c.embedTitle,
-      height: 1100,
+      height: 2124, // Google's own recommended height for this form
     },
     {
       blockType: 'text' as const,
