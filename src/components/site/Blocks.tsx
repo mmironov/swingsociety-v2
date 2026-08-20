@@ -82,6 +82,26 @@ const embedSrc = (raw?: string | null): string | null => {
   }
 }
 
+/**
+ * The same form as a standalone page, for the fallback link.
+ *
+ * `embedded=true` strips the header and footer because it is meant to sit inside
+ * another page's frame. Opening that variant in a new tab gives a chrome-less form
+ * floating on white, so the link drops the parameter and points at the ordinary
+ * Google Forms page instead.
+ */
+const openUrl = (raw?: string | null): string | null => {
+  const src = embedSrc(raw)
+  if (!src) return null
+  try {
+    const url = new URL(src)
+    url.searchParams.delete('embedded')
+    return url.toString()
+  } catch {
+    return src
+  }
+}
+
 const renderBlock = (block: Block, locale: Locale): React.ReactNode => {
   switch (block.blockType) {
     case 'heading':
@@ -158,7 +178,7 @@ const renderBlock = (block: Block, locale: Locale): React.ReactNode => {
           />
           <p className="block__embed-fallback">
             {t('embedFallback', locale)}{' '}
-            <a href={src} target="_blank" rel="noreferrer noopener">
+            <a href={openUrl(block.url) ?? src} target="_blank" rel="noreferrer noopener">
               {t('openInNewTab', locale)}
             </a>
           </p>

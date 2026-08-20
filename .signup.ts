@@ -9,7 +9,7 @@ const copy = {
     title: 'Запиши се за курс',
     lead: 'Попълни формата по-долу и ще се свържем с теб с всички подробности за началото на групата.',
     embedTitle: 'Форма за записване',
-    note: 'Ако предпочиташ, писни ни на имейл или в социалните мрежи — но формата е най-бързият начин да запазим място за теб.',
+    note: 'Ако предпочиташ, пиши ни на имейл или в социалните мрежи — но формата е най-бързият начин да запазим място за теб.',
   },
   en: {
     kicker: 'Sign up',
@@ -22,39 +22,20 @@ const copy = {
 
 const payload = await getPayload({ config })
 
-const existing = await payload.find({
-  collection: 'pages',
-  locale: 'bg',
-  where: { slug: { equals: 'sign-up' } },
-  limit: 1,
-  overrideAccess: true,
-  depth: 0,
-})
-
 const blocksFor = (locale: 'bg' | 'en', ids?: (string | null | undefined)[]) => {
   const c = copy[locale]
   return [
-    {
-      blockType: 'embed' as const,
-      ...(ids?.[0] ? { id: ids[0] } : {}),
-      url: FORM,
-      title: c.embedTitle,
-      height: 2124, // Google's own recommended height for this form
-    },
+    { blockType: 'embed' as const, ...(ids?.[0] ? { id: ids[0] } : {}), url: FORM, title: c.embedTitle, height: 2124 },
     {
       blockType: 'text' as const,
       ...(ids?.[1] ? { id: ids[1] } : {}),
       content: {
         root: {
-          type: 'root',
-          format: '', indent: 0, version: 1, direction: 'ltr' as const,
-          children: [
-            {
-              type: 'paragraph',
-              format: '', indent: 0, version: 1, direction: 'ltr' as const,
-              children: [{ type: 'text', text: c.note, format: 0, style: '', mode: 'normal', detail: 0, version: 1 }],
-            },
-          ],
+          type: 'root', format: '', indent: 0, version: 1, direction: 'ltr' as const,
+          children: [{
+            type: 'paragraph', format: '', indent: 0, version: 1, direction: 'ltr' as const,
+            children: [{ type: 'text', text: c.note, format: 0, style: '', mode: 'normal', detail: 0, version: 1 }],
+          }],
         },
       },
     },
@@ -70,6 +51,11 @@ const data = (locale: 'bg' | 'en', ids?: (string | null | undefined)[]) => ({
   _status: 'published' as const,
 })
 
+const existing = await payload.find({
+  collection: 'pages', locale: 'bg', where: { slug: { equals: 'sign-up' } },
+  limit: 1, overrideAccess: true, depth: 0,
+})
+
 let id: number
 if (existing.docs[0]) {
   id = existing.docs[0].id as number
@@ -81,17 +67,15 @@ if (existing.docs[0]) {
   console.log(`  created page #${id}`)
 }
 
-// Reuse the block ids the Bulgarian pass assigned, or the English text replaces
-// the rows instead of translating them.
+// Reuse the ids the Bulgarian pass assigned, or English replaces the rows.
 const saved = await payload.findByID({ collection: 'pages', id, locale: 'bg', overrideAccess: true, depth: 0 })
 const ids = (saved.blocks ?? []).map((b: { id?: string | null }) => b.id)
 await payload.update({ collection: 'pages', id, locale: 'en', data: data('en', ids) as never, overrideAccess: true })
-console.log(`  english written with block ids: ${JSON.stringify(ids)}`)
 
 for (const locale of ['bg', 'en'] as const) {
   const doc = await payload.findByID({ collection: 'pages', id, locale, overrideAccess: true, depth: 0 })
-  const embed = (doc.blocks ?? []).find((b: { blockType: string }) => b.blockType === 'embed') as { url?: string } | undefined
-  console.log(`  [${locale}] slug=${doc.slug} title=${JSON.stringify(doc.title)} status=${doc._status} embed=${embed?.url ? 'set' : 'MISSING'}`)
+  const embed = (doc.blocks ?? []).find((b: { blockType: string }) => b.blockType === 'embed') as { url?: string; height?: number } | undefined
+  console.log(`  [${locale}] "${doc.title}" slug=${doc.slug} status=${doc._status} height=${embed?.height} blocks=${doc.blocks?.length}`)
 }
 
 await payload.db.destroy?.()
