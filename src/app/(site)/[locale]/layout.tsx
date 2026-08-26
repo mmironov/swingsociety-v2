@@ -4,6 +4,7 @@ import { Manrope, Playfair_Display } from 'next/font/google'
 import { HTML_LANG, LOCALES, type Locale, isLocale } from '../../../lib/i18n'
 import { getSiteSettings } from '../../../lib/content'
 import { mediaUrl } from '../../../lib/media'
+import { Analytics } from '@vercel/analytics/next'
 import { Reveal } from '../../../components/site/Reveal'
 import '../globals.css'
 
@@ -79,6 +80,15 @@ const LocaleLayout = async ({
       <body>
         <Reveal />
         {children}
+        {/*
+          Vercel Web Analytics. Mounted in the site layout rather than a shared root,
+          so /admin is not measured: the school editing its own content is not
+          traffic, and counting it would both inflate the numbers and spend the
+          plan's event quota on ourselves.
+
+          Cookieless, so it does not add a consent banner to a site serving the EU.
+        */}
+        <Analytics />
       </body>
     </html>
   )
