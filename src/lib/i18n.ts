@@ -51,6 +51,13 @@ const STRINGS = {
   specDuration: { bg: 'Продължителност', en: 'Duration' },
   specStart: { bg: 'Начало', en: 'Starts' },
   specWhen: { bg: 'Кога', en: 'When' },
+  heroNextStart: { bg: 'Следващ старт', en: 'Next start' },
+  heroNoPartner: { bg: 'без партньор и без опит', en: 'no partner, no experience' },
+  heroLocations: { bg: 'локации в София', en: 'locations in Sofia' },
+  heroFormingSoon: {
+    bg: 'Следващата група се обявява скоро',
+    en: 'The next group will be announced soon',
+  },
   specPrice: { bg: 'Цена', en: 'Price' },
   specVenue: { bg: 'Зала', en: 'Venue' },
   statusOpen: { bg: 'Записването е отворено', en: 'Registration open' },
