@@ -6,6 +6,7 @@ import { getDancesPage, getSiteSettings } from '../../../../lib/content'
 import { SiteHeader } from '../../../../components/site/SiteHeader'
 import { Footer } from '../../../../components/site/Footer'
 import { DancesList } from '../../../../components/site/DancesList'
+import { alternatesFor } from '../../../../lib/seo'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -20,7 +21,7 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
     // "· Swing Society" suffix.
     title: page.meta?.title ? { absolute: page.meta.title } : page.title,
     description: page.meta?.description || page.lead || undefined,
-    alternates: { canonical: path('/dances', locale) },
+    alternates: { canonical: path('/dances', locale), ...alternatesFor('/dances') },
   }
 }
 

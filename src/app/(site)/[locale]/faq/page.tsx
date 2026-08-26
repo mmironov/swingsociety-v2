@@ -6,6 +6,8 @@ import { getFaqPage, getSiteSettings } from '../../../../lib/content'
 import { SiteHeader } from '../../../../components/site/SiteHeader'
 import { Footer } from '../../../../components/site/Footer'
 import { FaqList } from '../../../../components/site/FaqList'
+import { alternatesFor, faqJsonLd } from '../../../../lib/seo'
+import { JsonLd } from '../../../../components/site/JsonLd'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -19,8 +21,18 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
     // A CMS-written SEO title is used verbatim; a plain title takes the layout's
     // "· Swing Society" suffix.
     title: page.meta?.title ? { absolute: page.meta.title } : page.title,
-    description: page.meta?.description || page.lead || undefined,
-    alternates: { canonical: path('/faq', locale) },
+    // This page has no lead, so the first questions stand in. A result with no
+    // description is a result nobody clicks.
+    description:
+      page.meta?.description ||
+      page.lead ||
+      (page.items ?? [])
+        .map((item) => item.question)
+        .filter(Boolean)
+        .slice(0, 3)
+        .join(' · ') ||
+      undefined,
+    alternates: { canonical: path('/faq', locale), ...alternatesFor('/faq') },
   }
 }
 
@@ -33,7 +45,8 @@ const FaqRoute = async ({ params }: Props) => {
 
   return (
     <>
-      <SiteHeader locale={locale} currentPath="/dances" />
+      <JsonLd data={faqJsonLd(page)} />
+      <SiteHeader locale={locale} currentPath="/faq" />
       <div className="shell">
         <main>
           <div className="page-head">

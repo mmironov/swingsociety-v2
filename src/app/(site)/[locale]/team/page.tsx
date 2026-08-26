@@ -6,6 +6,7 @@ import { getTeachers, getTeamPage, getSiteSettings } from '../../../../lib/conte
 import { SiteHeader } from '../../../../components/site/SiteHeader'
 import { Footer } from '../../../../components/site/Footer'
 import { TeamGrid } from '../../../../components/site/TeamGrid'
+import { alternatesFor } from '../../../../lib/seo'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -18,7 +19,7 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
   return {
     title: page.meta?.title ? { absolute: page.meta.title } : page.title,
     description: page.meta?.description || page.lead || undefined,
-    alternates: { canonical: path('/team', locale) },
+    alternates: { canonical: path('/team', locale), ...alternatesFor('/team') },
   }
 }
 

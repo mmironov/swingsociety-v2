@@ -11,6 +11,8 @@ import {
 import { eventTagClass, eventTypeLabel, eventDateLabel, startLabel } from '../../../../lib/course'
 import { formatTimeRange, googleCalendarUrl } from '../../../../lib/format'
 import { resolveLink } from '../../../../lib/links'
+import { alternatesFor, eventsJsonLd } from '../../../../lib/seo'
+import { JsonLd } from '../../../../components/site/JsonLd'
 import { SiteHeader } from '../../../../components/site/SiteHeader'
 import { Footer } from '../../../../components/site/Footer'
 import { CmsLink } from '../../../../components/site/CmsLink'
@@ -31,7 +33,7 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
     // gets the "· Swing Society" suffix from the layout template.
     title: page.meta?.title ? { absolute: page.meta.title } : page.title,
     description: page.meta?.description || page.lead || undefined,
-    alternates: { canonical: path('/schedule', locale) },
+    alternates: { canonical: path('/schedule', locale), ...alternatesFor('/schedule') },
   }
 }
 
@@ -59,6 +61,7 @@ const ScheduleRoute = async ({ params }: Props) => {
 
   return (
     <>
+      <JsonLd data={eventsJsonLd(events, settings)} />
       <SiteHeader locale={locale} currentPath="/schedule" />
       <div className="shell">
         <main className="schedule">

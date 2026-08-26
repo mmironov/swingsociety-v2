@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import config from '../../../../payload.config'
 import { focalPosition, mediaAlt, mediaUrl } from '../../../../lib/media'
 import { toEmbedUrl } from '../../../../lib/format'
+import { alternatesForPaths } from '../../../../lib/seo'
 import { SiteHeader } from '../../../../components/site/SiteHeader'
 import { Footer } from '../../../../components/site/Footer'
 import { Blocks } from '../../../../components/site/Blocks'
@@ -39,7 +40,12 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
     // layout's "· Swing Society" suffix.
     title: page.meta?.title ? { absolute: page.meta.title } : page.title,
     description,
-    alternates: { canonical: path(`/${slug}`, locale) },
+    alternates: {
+      canonical: path(`/${slug}`, locale),
+      // Slugs are localized, so the sibling path comes from the document rather
+      // than from swapping a prefix.
+      ...alternatesForPaths(await localePathsFor(page.id)),
+    },
     openGraph: {
       type: 'article',
       title,
