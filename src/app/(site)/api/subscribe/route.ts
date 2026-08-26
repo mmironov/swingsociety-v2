@@ -65,11 +65,30 @@ const clientKey = (request: Request): string =>
  * proxy that strips the header.
  */
 const wrongOrigin = (request: Request): boolean => {
-  const expected = process.env.NEXT_PUBLIC_SERVER_URL?.trim()
+  // On a preview deployment the page is served from the deployment's own host, not
+  // from NEXT_PUBLIC_SERVER_URL — which still points at production, as it should
+  // for canonical URLs. Without these, every submission from a preview would be
+  // rejected, and the form could never be tested before release.
+  const allowed = [
+    process.env.NEXT_PUBLIC_SERVER_URL,
+    process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
+    process.env.VERCEL_BRANCH_URL && `https://${process.env.VERCEL_BRANCH_URL}`,
+  ]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value))
+
   const origin = request.headers.get('origin')
-  if (!expected || !origin) return false
+  if (allowed.length === 0 || !origin) return false
+
   try {
-    return new URL(origin).origin !== new URL(expected).origin
+    const from = new URL(origin).origin
+    return !allowed.some((candidate) => {
+      try {
+        return new URL(candidate).origin === from
+      } catch {
+        return false
+      }
+    })
   } catch {
     return true
   }

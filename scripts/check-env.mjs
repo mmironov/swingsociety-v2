@@ -116,6 +116,28 @@ if (!onVercel && existsSync('.env.production.local')) {
   )
 }
 
+/**
+ * Say out loud which database this build is about to migrate.
+ *
+ * A preview deployment inherits production environment variables unless they are
+ * scoped to the Preview environment, so `payload migrate` in build:production can
+ * alter the live schema from an unreviewed branch. Nothing in the build output would
+ * otherwise say so. Host and database name only — never the credentials.
+ */
+if (process.env.VERCEL_ENV) {
+  let target = '(unparseable DATABASE_URI)'
+  try {
+    const url = new URL(process.env.DATABASE_URI ?? '')
+    target = `${url.hostname}${url.pathname}`
+  } catch {}
+  console.log(`  environment : ${process.env.VERCEL_ENV}`)
+  console.log(`  database    : ${target}`)
+  if (process.env.VERCEL_ENV !== 'production') {
+    console.log('  note        : migrations in this build run against the database above.')
+    console.log('                If that is the production one, scope DATABASE_URI to Preview.')
+  }
+}
+
 for (const w of warnings) console.warn(`\n⚠  ${w}`)
 
 if (errors.length > 0) {

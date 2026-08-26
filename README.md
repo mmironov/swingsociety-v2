@@ -376,6 +376,48 @@ flow works, not enough to mail anyone else.
 
 ---
 
+## Branches and preview deployments
+
+Features go to a branch first, Vercel builds a preview for it, and it reaches
+production by merging to `main`.
+
+```bash
+git checkout -b feature/whatever
+# ... work, commit, push the branch — Vercel builds a preview automatically
+```
+
+⚠️ **Scope `DATABASE_URI` to the Preview environment before relying on this.** A
+preview deployment inherits production environment variables unless they are set per
+environment, and `npm run build:production` runs `payload migrate` — so a schema
+change on an unreviewed branch would alter the **live** database. Create a Neon
+branch and set `DATABASE_URI` for Preview only:
+
+- Neon → your project → Branches → **New branch** from `main`
+- Vercel → Settings → Environment Variables → `DATABASE_URI`, scoped to **Preview**,
+  set to the branch's pooled connection string
+
+The build log names the database it is about to migrate on every Vercel build, so a
+preview pointed at production is visible rather than silent:
+
+```
+environment : preview
+database    : ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb
+note        : migrations in this build run against the database above.
+```
+
+Two things behave differently on a preview, both deliberate:
+
+- **`robots.txt` disallows everything.** A preview is a full copy of the site on a
+  public URL; indexed, it competes with the real domain for the school's own terms.
+  Vercel sets a noindex header on `*.vercel.app` previews, but that stops applying
+  once a preview has an alias.
+- **`/api/subscribe` accepts the preview's own origin** as well as the production
+  one, so the sign-up form can actually be tested before release. `NEXT_PUBLIC_SERVER_URL`
+  stays pointed at production on previews, which is what keeps canonical URLs honest.
+
+Blob storage is still shared with production unless you scope `BLOB_READ_WRITE_TOKEN`
+too. Reading is harmless; uploading through a preview's `/admin` writes real files.
+
 ## Moving content from local to production
 
 `npm run seed` and `npm run seed:remote` load the *design's* baseline content and
