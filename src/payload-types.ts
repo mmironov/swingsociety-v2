@@ -425,6 +425,10 @@ export interface Course {
    */
   venue?: string | null;
   /**
+   * Как да се напише залата, когато мястото е малко — на началната страница например. Едно-две разпознаваеми думи: „Лозенец“, „Студентски дом“. Празно означава пълното име.
+   */
+  venueShort?: string | null;
+  /**
    * Google Maps адрес на залата.
    */
   mapUrl?: string | null;
@@ -840,6 +844,7 @@ export interface CoursesSelect<T extends boolean = true> {
   time?: T;
   price?: T;
   venue?: T;
+  venueShort?: T;
   mapUrl?: T;
   status?: T;
   registration?:

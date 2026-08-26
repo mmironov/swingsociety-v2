@@ -120,6 +120,16 @@ export const Courses: CollectionConfig = {
               admin: { description: 'напр. „Национален студентски дом, София“' },
             },
             {
+              name: 'venueShort',
+              type: 'text',
+              label: 'Кратко име на залата',
+              localized: true,
+              admin: {
+                description:
+                  'Как да се напише залата, когато мястото е малко — на началната страница например. Едно-две разпознаваеми думи: „Лозенец“, „Студентски дом“. Празно означава пълното име.',
+              },
+            },
+            {
               name: 'mapUrl',
               type: 'text',
               label: 'Връзка към картата',

@@ -51,21 +51,25 @@ export const Hero = ({
 
   const open = upcoming(groups)
   const next = open[0]
-  const venues = [...new Set(open.map((c) => c.venue?.trim()).filter(Boolean))] as string[]
-
-  // Venue names are long ("Национален Студентски Дом, зала 404"). One venue is
-  // worth naming; more than one is worth counting, and the names are in the card
-  // immediately below.
-  const where =
-    venues.length === 1 ? venues[0] : venues.length > 1 ? `${venues.length} ${t('heroLocations', locale)}` : ''
 
   const facts = next
     ? [
         `${t('heroNextStart', locale)} ${formatDayMonth(next.startDate, locale)}`,
-        where,
         t('heroNoPartner', locale),
-      ].filter(Boolean)
+      ]
     : [t('heroFormingSoon', locale), t('heroNoPartner', locale)]
+
+  /**
+   * Each group as "where — when". The venue is what decides which group somebody
+   * joins, so it is named rather than counted; venueShort keeps the full
+   * "Национален Студентски Дом, зала 404" out of a headline, falling back to the
+   * full name when nobody has set a short one.
+   */
+  const where = open.map((course) => ({
+    id: course.id,
+    place: course.venueShort?.trim() || course.venue?.trim() || '',
+    when: [course.day, course.time].filter(Boolean).join(', '),
+  }))
 
   return (
     <header className="hero" id="top">
@@ -88,6 +92,17 @@ export const Hero = ({
               <li key={fact}>{fact}</li>
             ))}
           </ul>
+
+          {where.length > 0 ? (
+            <ul className="hero__where">
+              {where.map((group) => (
+                <li key={group.id}>
+                  <span className="hero__where-place">{group.place}</span>
+                  {group.when ? <span className="hero__where-when">{group.when}</span> : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
           <div className="hero__cta">
             {next ? (

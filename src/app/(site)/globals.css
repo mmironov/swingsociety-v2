@@ -713,6 +713,35 @@ a.btn:hover {
   color: #f5b334;
 }
 
+/* MOCK — the groups, named. Two rows rather than one line: the venue and the nights
+   belong together, and a single line of both wrapped badly in Bulgarian. */
+.hero__where {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  max-width: 30ch;
+}
+.hero__where li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 7px 0;
+  border-top: 1px solid color-mix(in srgb, #f4ece0 14%, transparent);
+  font-size: clamp(14px, 1.2vw, 16px);
+}
+.hero__where-place {
+  font-weight: 600;
+  color: #f4ece0;
+}
+.hero__where-when {
+  color: color-mix(in srgb, #f4ece0 66%, transparent);
+  text-align: right;
+  white-space: nowrap;
+}
+
 .hero__title {
   font-family: var(--font-heading);
   font-weight: var(--font-heading-weight);
