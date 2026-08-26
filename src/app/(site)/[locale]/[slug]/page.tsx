@@ -125,7 +125,14 @@ const PageRoute = async ({ params }: Props) => {
 
           <div className="article__actions">
             <CmsLink link={page.cta ?? null} locale={locale} className="btn btn-primary" />
-            <Link className="btn btn-secondary" href={`${path('/', locale)}#dances`}>
+            {/*
+              Points at the dances page, not a home-page anchor. It used to be
+              `/#dances`, which broke silently when that section became its own
+              page: the anchor no longer exists, so the button dropped the visitor
+              at the top of the home page. Anchors into another page's internals are
+              exactly the links that rot when that page is reorganised.
+            */}
+            <Link className="btn btn-secondary" href={path('/dances', locale)}>
               {t('allDances', locale)}
             </Link>
           </div>
