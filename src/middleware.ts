@@ -4,31 +4,6 @@ import { DEFAULT_LOCALE, LOCALES, isLocale } from './lib/i18n'
 /** Paths the site's locale routing must never touch. */
 const PASSTHROUGH = ['/admin', '/api', '/_next', '/media', '/img']
 
-/**
- * Picks the best locale from the browser's Accept-Language header, falling back
- * to Bulgarian. A Bulgarian visitor should never land on the English site, and
- * vice versa, but the choice is only ever applied to an unprefixed URL — once
- * someone is on /en, they stay there.
- */
-const negotiateLocale = (request: NextRequest) => {
-  const header = request.headers.get('accept-language')
-  if (!header) return DEFAULT_LOCALE
-
-  const ranked = header
-    .split(',')
-    .map((part) => {
-      const [tag, q] = part.trim().split(';q=')
-      return { tag: tag.toLowerCase(), q: q ? Number(q) : 1 }
-    })
-    .sort((a, b) => b.q - a.q)
-
-  for (const { tag } of ranked) {
-    const base = tag.split('-')[0]
-    if (isLocale(base)) return base
-  }
-  return DEFAULT_LOCALE
-}
-
 export const middleware = (request: NextRequest) => {
   const { pathname } = request.nextUrl
 
@@ -41,7 +16,19 @@ export const middleware = (request: NextRequest) => {
   const first = pathname.split('/')[1]
   if (isLocale(first)) return NextResponse.next()
 
-  const locale = negotiateLocale(request)
+  /**
+   * Unprefixed URLs always go to Bulgarian.
+   *
+   * This used to negotiate from Accept-Language, so an English browser opening
+   * swingsociety.bg landed on /en. The school is in Sofia and sells to a Bulgarian
+   * audience, so Bulgarian is the front door; an English speaker switches with the
+   * BG/EN toggle in the nav, which is one tap away on every page.
+   *
+   * Deliberately not a redirect that depends on the visitor: the same URL now always
+   * resolves to the same language, which is also what makes /bg the stable thing for
+   * search engines to index.
+   */
+  const locale = DEFAULT_LOCALE
   const url = request.nextUrl.clone()
   url.pathname = `/${locale}${pathname === '/' ? '' : pathname}`
   return NextResponse.redirect(url)
