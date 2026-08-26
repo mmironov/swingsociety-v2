@@ -377,6 +377,17 @@ a.btn:hover {
 }
 /* Sections that sit directly under another section's bottom padding only need
    their own bottom space. */
+/* Top of a page whose body is a section component.
+   Those sections use --tight-top, which has no top padding at all: on the home page
+   they sit under the previous section's bottom padding. Standing alone there is
+   nothing above them, so the back link would land under the fixed header. This
+   supplies the header clearance and the gap before the content. */
+.page-head {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 128px var(--gutter) clamp(24px, 3vw, 40px);
+}
+
 .section--tight-top {
   padding: 0 var(--gutter) clamp(80px, 11vw, 150px);
 }

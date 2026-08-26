@@ -36,9 +36,11 @@ const FaqRoute = async ({ params }: Props) => {
       <SiteHeader locale={locale} currentPath="/dances" />
       <div className="shell">
         <main>
-          <Link className="back-link" href={path('/', locale)}>
-            {t('backHome', locale)}
-          </Link>
+          <div className="page-head">
+            <Link className="back-link" href={path('/', locale)}>
+              {t('backHome', locale)}
+            </Link>
+          </div>
           <FaqList locale={locale} page={page} />
         </main>
         <Footer locale={locale} settings={settings} cta={null} />

@@ -38,9 +38,11 @@ const TeamRoute = async ({ params }: Props) => {
       <SiteHeader locale={locale} currentPath="/team" />
       <div className="shell">
         <main>
-          <Link className="back-link" href={path('/', locale)}>
-            {t('backHome', locale)}
-          </Link>
+          <div className="page-head">
+            <Link className="back-link" href={path('/', locale)}>
+              {t('backHome', locale)}
+            </Link>
+          </div>
           <TeamGrid page={page} members={members} />
         </main>
         <Footer locale={locale} settings={settings} cta={null} />

@@ -16,7 +16,7 @@ export const TeamGrid = ({
   page: Pick<TeamPage, 'kicker' | 'title' | 'lead'>
   members: Teacher[]
 }) => (
-  <section className="section team">
+  <section className="section section--tight-top team">
     <div className="wrap" data-reveal>
       <SectionHead
         as="h1"
