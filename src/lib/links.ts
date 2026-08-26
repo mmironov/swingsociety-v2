@@ -26,6 +26,17 @@ const isExternalHref = (href: string) => /^https?:\/\//i.test(href)
  * Returns null when the link has nothing to point at, so callers can omit the
  * button entirely rather than render a dead `#`.
  */
+/**
+ * Home-page sections that are now standalone pages.
+ *
+ * Anything not listed here is still an anchor on the home page.
+ */
+const MOVED_SECTIONS: Record<string, string> = {
+  dances: '/dances',
+  faq: '/faq',
+  team: '/team',
+}
+
 export const resolveLink = (
   link: CmsLink,
   locale: Locale,
@@ -48,8 +59,15 @@ export const resolveLink = (
       return build(page?.slug ? path(`/${page.slug}`, locale) : null)
     }
 
-    case 'section':
-      return build(link.section ? `${path('/', locale)}#${link.section}` : null)
+    case 'section': {
+      if (!link.section) return build(null)
+      // Three sections became pages of their own. Existing links still say
+      // "section: dances", and rewriting every one of them in the database would
+      // be churn for no gain — resolving them to the new route keeps the nav, the
+      // footer and any CTA pointing somewhere real, with nothing to migrate.
+      const moved = MOVED_SECTIONS[link.section]
+      return build(moved ? path(moved, locale) : `${path('/', locale)}#${link.section}`)
+    }
 
     case 'schedule':
       return build(path('/schedule', locale))

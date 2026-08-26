@@ -1,32 +1,33 @@
-import type { HomePage, Teacher } from '../../payload-types'
-import type { Locale } from '../../lib/i18n'
+import type { TeamPage, Teacher } from '../../payload-types'
 import { focalPosition, mediaAlt, mediaUrl } from '../../lib/media'
-import { SectionHead } from '../site/SectionHead'
+import { SectionHead } from './SectionHead'
 
 /** First letter of the name, for a teacher whose photo isn't in yet. */
 const initial = (name: string) => Array.from(name.trim())[0]?.toUpperCase() ?? '·'
 
-export const Team = ({
-  team,
+/**
+ * The body of the team page. The people come from the Teachers collection, so
+ * adding someone never means editing this page.
+ */
+export const TeamGrid = ({
+  page,
   members,
 }: {
-  locale: Locale
-  team: HomePage['team']
+  page: Pick<TeamPage, 'kicker' | 'title' | 'lead'>
   members: Teacher[]
-}) => {
-  if (team?.enabled === false || members.length === 0) return null
+}) => (
+  <section className="section team">
+    <div className="wrap" data-reveal>
+      <SectionHead
+        as="h1"
+        kicker={page.kicker}
+        heading={page.title}
+        intro={page.lead}
+        goldKicker
+        introClass="team__intro"
+      />
 
-  return (
-    <section className="section team" id="team">
-      <div className="wrap" data-reveal>
-        <SectionHead
-          kicker={team?.kicker}
-          heading={team?.heading}
-          intro={team?.intro}
-          goldKicker
-          introClass="team__intro"
-        />
-
+      {members.length > 0 ? (
         <div className="team__grid">
           {members.map((member) => {
             const photo = mediaUrl(member.photo, 600)
@@ -55,7 +56,7 @@ export const Team = ({
             )
           })}
         </div>
-      </div>
-    </section>
-  )
-}
+      ) : null}
+    </div>
+  </section>
+)

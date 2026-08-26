@@ -5,7 +5,6 @@ import {
   getHomePage,
   getReviews,
   getSiteSettings,
-  getTeachers,
   getUpcomingEvents,
 } from '../../../lib/content'
 import { mediaUrl } from '../../../lib/media'
@@ -16,10 +15,7 @@ import { PromoCards } from '../../../components/home/PromoCards'
 import { Beginners } from '../../../components/home/Beginners'
 import { Reviews } from '../../../components/home/Reviews'
 import { VideoStrip } from '../../../components/home/VideoStrip'
-import { Dances } from '../../../components/home/Dances'
-import { Faq } from '../../../components/home/Faq'
 import { Events } from '../../../components/home/Events'
-import { Team } from '../../../components/home/Team'
 import { About } from '../../../components/home/About'
 import { Contact } from '../../../components/home/Contact'
 
@@ -48,10 +44,9 @@ const HomeRoute = async ({ params }: Props) => {
   if (!isLocale(raw)) notFound()
   const locale = raw as Locale
 
-  const [settings, home, teachers, reviews] = await Promise.all([
+  const [settings, home, reviews] = await Promise.all([
     getSiteSettings(locale),
     getHomePage(locale),
-    getTeachers(locale),
     getReviews(locale),
   ])
 
@@ -74,10 +69,7 @@ const HomeRoute = async ({ params }: Props) => {
         <Beginners locale={locale} beginners={home.beginners} />
         <Reviews locale={locale} reviews={home.reviews} items={reviews} />
         <VideoStrip locale={locale} videoStrip={home.videoStrip} />
-        <Dances locale={locale} dances={home.dances} />
-        <Faq locale={locale} faq={home.faq} />
         <Events locale={locale} events={home.events} items={events} />
-        <Team locale={locale} team={home.team} members={teachers} />
         <About locale={locale} about={home.about} />
         <Contact locale={locale} contact={home.contact} settings={settings} />
         <Footer locale={locale} settings={settings} cta={home.footerCta} />

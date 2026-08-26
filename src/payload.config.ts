@@ -20,6 +20,9 @@ import { Subscribers } from './collections/Subscribers'
 import { SiteSettings } from './globals/SiteSettings'
 import { HomePage } from './globals/HomePage'
 import { SchedulePage } from './globals/SchedulePage'
+import { DancesPage } from './globals/DancesPage'
+import { FaqPage } from './globals/FaqPage'
+import { TeamPage } from './globals/TeamPage'
 import { resolveBlobToken } from './lib/blobToken'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -111,7 +114,7 @@ export default buildConfig({
   },
 
   collections: [Pages, Courses, Events, Teachers, Reviews, Media, Subscribers, Users],
-  globals: [HomePage, SchedulePage, SiteSettings],
+  globals: [HomePage, SchedulePage, DancesPage, FaqPage, TeamPage, SiteSettings],
 
   editor: lexicalEditor(),
 

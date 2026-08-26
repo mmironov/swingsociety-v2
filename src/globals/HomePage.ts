@@ -321,7 +321,15 @@ export const HomePage: GlobalConfig = {
             {
               name: 'dances',
               type: 'group',
-              label: 'Секция „Танци“',
+              label: 'Секция „Танци“ (преместено в отделна страница)',
+              /**
+               * Moved to its own page. The fields stay in the schema until the
+               * content has been copied into the new global and verified in every
+               * environment — dropping a column is not something to do in the same
+               * change that fills its replacement. Hidden so nobody edits content
+               * that no longer renders anywhere.
+               */
+              admin: { hidden: true },
               fields: [
                 enabled(),
                 ...sectionHeader({ kicker: 'Танци', heading: 'Три езика на суинга' }),
@@ -355,7 +363,15 @@ export const HomePage: GlobalConfig = {
             {
               name: 'faq',
               type: 'group',
-              label: 'Секция „Въпроси“',
+              label: 'Секция „Въпроси“ (преместено в отделна страница)',
+              /**
+               * Moved to its own page. The fields stay in the schema until the
+               * content has been copied into the new global and verified in every
+               * environment — dropping a column is not something to do in the same
+               * change that fills its replacement. Hidden so nobody edits content
+               * that no longer renders anywhere.
+               */
+              admin: { hidden: true },
               fields: [
                 enabled(),
                 ...sectionHeader({
@@ -412,7 +428,15 @@ export const HomePage: GlobalConfig = {
             {
               name: 'team',
               type: 'group',
-              label: 'Секция „Екип“',
+              label: 'Секция „Екип“ (преместено в отделна страница)',
+              /**
+               * Moved to its own page. The fields stay in the schema until the
+               * content has been copied into the new global and verified in every
+               * environment — dropping a column is not something to do in the same
+               * change that fills its replacement. Hidden so nobody edits content
+               * that no longer renders anywhere.
+               */
+              admin: { hidden: true },
               fields: [
                 enabled(),
                 ...sectionHeader({ kicker: 'Екип', heading: 'Хората, които водят' }),

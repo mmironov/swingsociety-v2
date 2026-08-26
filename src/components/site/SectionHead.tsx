@@ -9,6 +9,7 @@ export const SectionHead = ({
   goldKicker = false,
   headingClass = 'section__heading',
   introClass = 'section__intro',
+  as: Heading = 'h2',
   children,
 }: {
   kicker?: string | null
@@ -17,20 +18,26 @@ export const SectionHead = ({
   goldKicker?: boolean
   headingClass?: string
   introClass?: string
+  /**
+   * On the home page these are sections under one h1, so h2 is right. A page whose
+   * whole subject is this content needs the h1 itself — one per document, or screen
+   * readers and search engines lose the outline.
+   */
+  as?: 'h1' | 'h2'
   /** Appended inside the intro paragraph — used for the trailing "see all" link. */
   children?: React.ReactNode
 }) => (
   <>
     {kicker ? <div className={goldKicker ? 'kicker kicker--gold' : 'kicker'}>{kicker}</div> : null}
     {heading ? (
-      <h2 className={headingClass}>
+      <Heading className={headingClass}>
         {toLines(heading).map((line, i) => (
           <React.Fragment key={i}>
             {i > 0 ? <br /> : null}
             {line}
           </React.Fragment>
         ))}
-      </h2>
+      </Heading>
     ) : null}
     {intro || children ? (
       <p className={introClass}>

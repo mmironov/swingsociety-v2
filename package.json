@@ -21,6 +21,8 @@
     "generate:importmap": "payload generate:importmap",
     "seed": "tsx --env-file=.env src/seed/run.ts",
     "seed:fresh": "tsx --env-file=.env src/seed/run.ts --fresh",
+    "sections:move": "tsx --env-file=.env src/scripts/move-sections-to-pages.ts",
+    "sections:move:remote": "NODE_ENV=production tsx --env-file=.env.seed.local src/scripts/move-sections-to-pages.ts",
     "content:export": "tsx --env-file=.env src/scripts/export-content.ts",
     "content:import": "NODE_ENV=production tsx --env-file=.env.seed.local src/scripts/import-content.ts",
     "seed:remote": "node scripts/require-env-file.mjs .env.seed.local && NODE_ENV=production tsx --env-file=.env.seed.local src/seed/run.ts",

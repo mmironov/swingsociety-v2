@@ -38,6 +38,21 @@ export const getSchedulePage = cache(async (locale: Locale) => {
   return payload.findGlobal({ slug: 'schedule-page', locale, depth: 2, overrideAccess: false })
 })
 
+export const getDancesPage = cache(async (locale: Locale) => {
+  const payload = await client()
+  return payload.findGlobal({ slug: 'dances-page', locale, depth: 2 })
+})
+
+export const getFaqPage = cache(async (locale: Locale) => {
+  const payload = await client()
+  return payload.findGlobal({ slug: 'faq-page', locale, depth: 1 })
+})
+
+export const getTeamPage = cache(async (locale: Locale) => {
+  const payload = await client()
+  return payload.findGlobal({ slug: 'team-page', locale, depth: 1 })
+})
+
 export const getTeachers = cache(async (locale: Locale): Promise<Teacher[]> => {
   const payload = await client()
   const { docs } = await payload.find({

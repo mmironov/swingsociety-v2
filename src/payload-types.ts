@@ -102,11 +102,17 @@ export interface Config {
   globals: {
     'home-page': HomePage;
     'schedule-page': SchedulePage;
+    'dances-page': DancesPage;
+    'faq-page': FaqPage;
+    'team-page': TeamPage;
     'site-settings': SiteSetting;
   };
   globalsSelect: {
     'home-page': HomePageSelect<false> | HomePageSelect<true>;
     'schedule-page': SchedulePageSelect<false> | SchedulePageSelect<true>;
+    'dances-page': DancesPageSelect<false> | DancesPageSelect<true>;
+    'faq-page': FaqPageSelect<false> | FaqPageSelect<true>;
+    'team-page': TeamPageSelect<false> | TeamPageSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
   };
   locale: 'bg' | 'en';
@@ -1426,6 +1432,125 @@ export interface SchedulePage {
   createdAt?: string | null;
 }
 /**
+ * Страницата с танцовите стилове (/dances).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "dances-page".
+ */
+export interface DancesPage {
+  id: number;
+  /**
+   * Малкият текст над заглавието.
+   */
+  kicker?: string | null;
+  /**
+   * Нов ред в текста става нов ред на сайта.
+   */
+  title: string;
+  /**
+   * Параграфът под заглавието. Може да остане празен.
+   */
+  lead?: string | null;
+  introLink: {
+    label?: string | null;
+    /**
+     * Определя коя от долните настройки се използва.
+     */
+    type: 'none' | 'external' | 'page' | 'section' | 'schedule' | 'home';
+    /**
+     * Пълен адрес, например https://swingbuzz.eu
+     */
+    url?: string | null;
+    page?: (number | null) | Page;
+    section?: ('beginners' | 'reviews' | 'dances' | 'faq' | 'events' | 'team' | 'about' | 'contact') | null;
+  };
+  /**
+   * Всяка карта показва заглавието, водещия параграф и голямата снимка на избраната страница. Редът тук е редът на картите.
+   */
+  items?: (number | Page)[] | null;
+  linkLabel?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Често задаваните въпроси (/faq).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faq-page".
+ */
+export interface FaqPage {
+  id: number;
+  /**
+   * Малкият текст над заглавието.
+   */
+  kicker?: string | null;
+  /**
+   * Нов ред в текста става нов ред на сайта.
+   */
+  title: string;
+  /**
+   * Параграфът под заглавието. Може да остане празен.
+   */
+  lead?: string | null;
+  items?:
+    | {
+        question: string;
+        answer: string;
+        link: {
+          label?: string | null;
+          /**
+           * Определя коя от долните настройки се използва.
+           */
+          type: 'none' | 'external' | 'page' | 'section' | 'schedule' | 'home';
+          /**
+           * Пълен адрес, например https://swingbuzz.eu
+           */
+          url?: string | null;
+          page?: (number | null) | Page;
+          section?: ('beginners' | 'reviews' | 'dances' | 'faq' | 'events' | 'team' | 'about' | 'contact') | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Страницата с екипа (/team). Хората се редактират в „Екип“.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-page".
+ */
+export interface TeamPage {
+  id: number;
+  /**
+   * Малкият текст над заглавието.
+   */
+  kicker?: string | null;
+  /**
+   * Нов ред в текста става нов ред на сайта.
+   */
+  title: string;
+  /**
+   * Параграфът под заглавието. Може да остане празен.
+   */
+  lead?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * Лого, контакти, меню и общият бутон „Запиши се“ — важат за целия сайт.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1785,6 +1910,87 @@ export interface SchedulePageSelect<T extends boolean = true> {
         page?: T;
         section?: T;
       };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "dances-page_select".
+ */
+export interface DancesPageSelect<T extends boolean = true> {
+  kicker?: T;
+  title?: T;
+  lead?: T;
+  introLink?:
+    | T
+    | {
+        label?: T;
+        type?: T;
+        url?: T;
+        page?: T;
+        section?: T;
+      };
+  items?: T;
+  linkLabel?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faq-page_select".
+ */
+export interface FaqPageSelect<T extends boolean = true> {
+  kicker?: T;
+  title?: T;
+  lead?: T;
+  items?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        link?:
+          | T
+          | {
+              label?: T;
+              type?: T;
+              url?: T;
+              page?: T;
+              section?: T;
+            };
+        id?: T;
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-page_select".
+ */
+export interface TeamPageSelect<T extends boolean = true> {
+  kicker?: T;
+  title?: T;
+  lead?: T;
   meta?:
     | T
     | {

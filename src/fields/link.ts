@@ -7,10 +7,10 @@ import type { Field } from 'payload'
 export const HOME_SECTIONS = [
   { label: 'Начинаещи / Beginners', value: 'beginners' },
   { label: 'Отзиви / Reviews', value: 'reviews' },
-  { label: 'Танци / Dances', value: 'dances' },
-  { label: 'Въпроси / FAQ', value: 'faq' },
+  { label: 'Танци / Dances (отделна страница)', value: 'dances' },
+  { label: 'Въпроси / FAQ (отделна страница)', value: 'faq' },
   { label: 'Събития / Events', value: 'events' },
-  { label: 'Екип / Team', value: 'team' },
+  { label: 'Екип / Team (отделна страница)', value: 'team' },
   { label: 'За нас / About', value: 'about' },
   { label: 'Контакти / Contact', value: 'contact' },
 ] as const
@@ -68,7 +68,7 @@ export const linkField = ({
         ...(required ? [] : [{ label: 'Без връзка', value: 'none' }]),
         { label: 'Външен адрес (https://…)', value: 'external' },
         { label: 'Страница от сайта', value: 'page' },
-        { label: 'Секция от началната страница', value: 'section' },
+        { label: 'Секция от началната страница (или Танци / Въпроси / Екип)', value: 'section' },
         { label: 'Графикът', value: 'schedule' },
         { label: 'Началната страница', value: 'home' },
       ],

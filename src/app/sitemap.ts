@@ -35,13 +35,24 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
       alternates: { languages: languagesFor((l) => url(l)) },
     })
   }
-  for (const locale of LOCALES) {
-    entries.push({
-      url: url(locale, '/schedule'),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-      alternates: { languages: languagesFor((l) => url(l, '/schedule')) },
-    })
+  // Routes that exist in code rather than as CMS pages. Each is the same path in
+  // both languages, so the alternates are a straight substitution. /sign-up is NOT
+  // here — it is a Pages document, so getPageSlugPairs() already emits it.
+  const FIXED = [
+    { path: '/schedule', priority: 0.8, changeFrequency: 'weekly' as const },
+    { path: '/dances', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/team', priority: 0.6, changeFrequency: 'monthly' as const },
+    { path: '/faq', priority: 0.6, changeFrequency: 'monthly' as const },
+  ]
+  for (const route of FIXED) {
+    for (const locale of LOCALES) {
+      entries.push({
+        url: url(locale, route.path),
+        changeFrequency: route.changeFrequency,
+        priority: route.priority,
+        alternates: { languages: languagesFor((l) => url(l, route.path)) },
+      })
+    }
   }
 
   for (const pair of await getPageSlugPairs()) {
