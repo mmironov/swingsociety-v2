@@ -382,6 +382,34 @@ a.btn:hover {
    they sit under the previous section's bottom padding. Standing alone there is
    nothing above them, so the back link would land under the fixed header. This
    supplies the header clearance and the gap before the content. */
+/* The locations inside the offer card. One course, two venues on different nights —
+   the venue is the heading because that is what a visitor is choosing between. */
+.locations {
+  margin: 18px 0 0;
+  display: grid;
+  gap: 14px;
+}
+.locations__item {
+  padding-top: 14px;
+  border-top: 1px solid var(--color-divider);
+}
+.locations__name {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+.locations__name a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+.locations__facts {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-neutral-600);
+}
+
 .page-head {
   max-width: var(--measure);
   margin: 0 auto;

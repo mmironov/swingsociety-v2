@@ -17,6 +17,15 @@ import { getPayload } from 'payload'
 import config from '../payload.config'
 
 const COMMIT = process.argv.includes('--commit')
+/**
+ * Forces every button label back to the locale default.
+ *
+ * Needed once, because an earlier version of this script read the localized label
+ * from the Bulgarian document and wrote it to both locales — so the English buttons
+ * ended up reading "Запиши се". Without this, the corrected script preserves that
+ * wrong value, since it is not empty.
+ */
+const RESET_LABELS = process.argv.includes('--reset-labels')
 const payload = await getPayload({ config })
 
 const home = await payload.findGlobal({
@@ -100,23 +109,32 @@ await payload.updateGlobal({
 })
 console.log(`\n  ✓ beginners.groups = [${groups.map((g) => g.id).join(', ')}]`)
 
+const FALLBACK_LABEL = { bg: 'Запиши се', en: 'Sign up' } as const
+
 if (signupPage) {
   for (const c of all.docs) {
     const d = c as unknown as Record<string, unknown>
-    const reg = (d.registration ?? {}) as Record<string, unknown>
     for (const locale of ['bg', 'en'] as const) {
+      // The label is localized, so it has to be read per locale. Reading it once
+      // and writing it to both wrote the Bulgarian label onto the English button.
+      const current = (await payload.findByID({
+        collection: 'courses',
+        id: c.id,
+        locale,
+        overrideAccess: true,
+        depth: 0,
+      })) as unknown as Record<string, unknown>
+      const reg = (current.registration ?? {}) as Record<string, unknown>
+      const label =
+        !RESET_LABELS && typeof reg.label === 'string' && reg.label.trim()
+          ? reg.label
+          : FALLBACK_LABEL[locale]
+
       await payload.update({
         collection: 'courses',
         id: c.id,
         locale,
-        data: {
-          registration: {
-            // Keep whatever label the editor wrote; only the destination changes.
-            label: reg.label ?? (locale === 'bg' ? 'Запиши се' : 'Sign up'),
-            type: 'page',
-            page: signupPage.id,
-          },
-        } as never,
+        data: { registration: { label, type: 'page', page: signupPage.id } } as never,
         overrideAccess: true,
         depth: 0,
       })
