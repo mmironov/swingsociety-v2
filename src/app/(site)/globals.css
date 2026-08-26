@@ -1835,6 +1835,39 @@ a.btn:hover {
   .hero__cta {
     justify-content: center;
   }
+  /* text-align does not reach a flex or grid container's own box, so the parts of
+     the hero that are laid out rather than flowed need centering of their own. */
+  .hero__title--offer {
+    max-width: 22ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero__facts {
+    justify-content: center;
+  }
+  /* The dot separates items sharing a line. Centered on a narrow screen they each
+     take their own line, where a leading dot reads as a stray bullet. */
+  .hero__facts li + li::before {
+    display: none;
+  }
+  .hero__where {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero__where li {
+    /* Place and time sit together in the middle rather than pushed to the edges,
+       which is what "centered" has to mean for a two-part row. */
+    justify-content: center;
+    gap: 10px;
+  }
+  .hero__where-when {
+    text-align: left;
+  }
+  .hero__where-when::before {
+    content: '·';
+    margin-right: 10px;
+    color: color-mix(in srgb, #f4ece0 40%, transparent);
+  }
   .hero__photo {
     margin-left: auto;
     margin-right: auto;
