@@ -59,18 +59,28 @@ const HomeRoute = async ({ params }: Props) => {
     <>
       <SiteHeader locale={locale} />
       <div className="shell">
+        {/*
+          Order is the offer, then the proof, then the story.
+
+          The beginner groups come first because they are what the school sells; the
+          promo pair moved below About because the festival card links off-site to
+          swingbuzz.eu, and an outbound link does not belong above the thing being
+          sold. Reviews and video sit after the offer, where they support a decision
+          already forming rather than introducing the school to someone who has not
+          seen what is on offer yet.
+        */}
         <Hero locale={locale} hero={home.hero} badge={settings.heroBadge} />
+        <Beginners locale={locale} beginners={home.beginners} />
+        <Reviews locale={locale} reviews={home.reviews} items={reviews} />
+        <VideoStrip locale={locale} videoStrip={home.videoStrip} />
+        <Events locale={locale} events={home.events} items={events} />
+        <About locale={locale} about={home.about} />
         <PromoCards
           locale={locale}
           courseCard={home.courseCard}
           festivalCard={home.festivalCard}
           registrationOpen={settings.registrationOpen}
         />
-        <Beginners locale={locale} beginners={home.beginners} />
-        <Reviews locale={locale} reviews={home.reviews} items={reviews} />
-        <VideoStrip locale={locale} videoStrip={home.videoStrip} />
-        <Events locale={locale} events={home.events} items={events} />
-        <About locale={locale} about={home.about} />
         <Contact locale={locale} contact={home.contact} settings={settings} />
         <Footer locale={locale} settings={settings} cta={home.footerCta} />
       </div>

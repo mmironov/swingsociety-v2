@@ -50,6 +50,7 @@ const STRINGS = {
   // Course spec table
   specDuration: { bg: 'Продължителност', en: 'Duration' },
   specStart: { bg: 'Начало', en: 'Starts' },
+  specWhen: { bg: 'Кога', en: 'When' },
   specPrice: { bg: 'Цена', en: 'Price' },
   specVenue: { bg: 'Зала', en: 'Venue' },
   statusOpen: { bg: 'Записването е отворено', en: 'Registration open' },

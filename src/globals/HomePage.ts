@@ -166,11 +166,28 @@ export const HomePage: GlobalConfig = {
                 enabled(),
                 ...sectionHeader({ kicker: 'Начинаещи', heading: 'Влез в група за начинаещи' }),
                 {
+                  name: 'groups',
+                  type: 'relationship',
+                  relationTo: 'courses',
+                  hasMany: true,
+                  label: 'Кои групи да се показват',
+                  admin: {
+                    description:
+                      'По една карта за всяка група — начало, ден, час, цена и зала идват от курса. Редът тук е редът на картите. Когато отвориш нова група, добави я тук.',
+                  },
+                },
+                {
                   name: 'course',
                   type: 'relationship',
                   relationTo: 'courses',
-                  label: 'Курсът в таблицата',
-                  admin: { description: 'Продължителност, начало, цена и зала идват от този курс.' },
+                  label: 'Курсът в таблицата (старо поле)',
+                  /**
+                   * Superseded by `groups`, which shows every open group rather than
+                   * one. Kept until the value has been copied across and verified in
+                   * both environments; hidden so nobody edits a field that no longer
+                   * renders.
+                   */
+                  admin: { hidden: true },
                 },
                 {
                   name: 'courseLinkLabel',

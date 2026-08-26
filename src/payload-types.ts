@@ -1148,8 +1148,9 @@ export interface HomePage {
     heading?: string | null;
     intro?: string | null;
     /**
-     * Продължителност, начало, цена и зала идват от този курс.
+     * По една карта за всяка група — начало, ден, час, цена и зала идват от курса. Редът тук е редът на картите. Когато отвориш нова група, добави я тук.
      */
+    groups?: (number | Course)[] | null;
     course?: (number | null) | Course;
     /**
      * Води към страницата с подробности за курса.
@@ -1709,6 +1710,7 @@ export interface HomePageSelect<T extends boolean = true> {
         kicker?: T;
         heading?: T;
         intro?: T;
+        groups?: T;
         course?: T;
         courseLinkLabel?: T;
         reassuranceHeading?: T;
