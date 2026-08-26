@@ -664,6 +664,74 @@ a.btn:hover {
   text-transform: uppercase;
   color: #f5b334;
 }
+/* Option A hero.
+   The slogan, demoted from the h1. Small and quiet, so it sets the tone without
+   competing with the offer beneath it. */
+.hero__tagline {
+  margin: 14px 0 0;
+  font-family: var(--font-heading);
+  font-size: clamp(19px, 2vw, 26px);
+  line-height: 1.15;
+  color: color-mix(in srgb, #f4ece0 62%, transparent);
+}
+.hero__facts {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: clamp(15px, 1.3vw, 18px);
+  color: color-mix(in srgb, #f4ece0 82%, transparent);
+}
+.hero__facts li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* A dot between items rather than after each, so the line does not end on one. */
+.hero__facts li + li::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f5b334;
+  flex: none;
+}
+.hero__facts li:first-child {
+  font-weight: 600;
+  color: #f5b334;
+}
+
+/* The groups, named. Two rows rather than one line: the venue and the nights
+   belong together, and a single line of both wrapped badly in Bulgarian. */
+.hero__where {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  max-width: 30ch;
+}
+.hero__where li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 7px 0;
+  border-top: 1px solid color-mix(in srgb, #f4ece0 14%, transparent);
+  font-size: clamp(14px, 1.2vw, 16px);
+}
+.hero__where-place {
+  font-weight: 600;
+  color: #f4ece0;
+}
+.hero__where-when {
+  color: color-mix(in srgb, #f4ece0 66%, transparent);
+  text-align: right;
+  white-space: nowrap;
+}
+
 .hero__title {
   font-family: var(--font-heading);
   font-weight: var(--font-heading-weight);
@@ -672,6 +740,16 @@ a.btn:hover {
   letter-spacing: -0.02em;
   margin: 18px 0 0;
   text-wrap: balance;
+}
+/* The offer headline carries more words than the slogan did, so it needs a smaller
+   ceiling than the 116px display size or it pushes the buttons off the first screen. */
+.hero__title--offer {
+  font-size: clamp(36px, 4.6vw, 62px);
+  line-height: 1.0;
+  /* A measure rather than fixed breaks, so Bulgarian and English both wrap to a
+     sensible shape without either being tuned for one viewport. */
+  max-width: 15ch;
+  margin-top: 10px;
 }
 .hero__intro {
   max-width: 32ch;

@@ -15,6 +15,25 @@ export const formatDate = (iso: string | null | undefined, locale: Locale): stri
   }).format(date)
 }
 
+/**
+ * `15 септември` / `15 September` — day and month, no year.
+ *
+ * Uses `month: 'long'` deliberately. With `short`, bg-BG returns "15.09": ICU treats
+ * the abbreviated Bulgarian month as numeric, which is why dates elsewhere on the
+ * site read 15.09.2026 г. rather than the design's "15 септ.". For a headline the
+ * month has to be a word.
+ */
+export const formatDayMonth = (iso: string | null | undefined, locale: Locale): string | null => {
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'Europe/Sofia',
+  }).format(date)
+}
+
 /** `22:00` — the school is in Sofia, so times are always rendered in its zone. */
 export const formatTime = (iso: string | null | undefined, locale: Locale): string | null => {
   if (!iso) return null

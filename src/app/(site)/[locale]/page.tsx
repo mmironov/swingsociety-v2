@@ -69,7 +69,14 @@ const HomeRoute = async ({ params }: Props) => {
           already forming rather than introducing the school to someone who has not
           seen what is on offer yet.
         */}
-        <Hero locale={locale} hero={home.hero} badge={settings.heroBadge} />
+        <Hero
+          locale={locale}
+          hero={home.hero}
+          badge={settings.heroBadge}
+          groups={(home.beginners?.groups ?? []).filter(
+            (g): g is NonNullable<typeof g> & object => typeof g === 'object' && g !== null,
+          )}
+        />
         <Beginners locale={locale} beginners={home.beginners} />
         <Reviews locale={locale} reviews={home.reviews} items={reviews} />
         <VideoStrip locale={locale} videoStrip={home.videoStrip} />

@@ -425,6 +425,10 @@ export interface Course {
    */
   venue?: string | null;
   /**
+   * Как да се напише залата, когато мястото е малко — на началната страница например. Едно-две разпознаваеми думи: „Лозенец“, „Студентски дом“. Празно означава пълното име.
+   */
+  venueShort?: string | null;
+  /**
    * Google Maps адрес на залата.
    */
   mapUrl?: string | null;
@@ -840,6 +844,7 @@ export interface CoursesSelect<T extends boolean = true> {
   time?: T;
   price?: T;
   venue?: T;
+  venueShort?: T;
   mapUrl?: T;
   status?: T;
   registration?:
@@ -1074,7 +1079,11 @@ export interface HomePage {
   id: number;
   hero: {
     /**
-     * Всеки нов ред тук става нов ред на сайта. Дизайнът е направен за три кратки реда.
+     * Какво продаваме, с думите, които хората търсят. Това е и заглавието, което Google чете първо. Пренася се само, без нови редове.
+     */
+    offerHeading?: string | null;
+    /**
+     * Кратък ред над голямото заглавие — задава тона, без да поема ролята му.
      */
     heading: string;
     intro?: string | null;
@@ -1654,6 +1663,7 @@ export interface HomePageSelect<T extends boolean = true> {
   hero?:
     | T
     | {
+        offerHeading?: T;
         heading?: T;
         intro?: T;
         photo?: T;
