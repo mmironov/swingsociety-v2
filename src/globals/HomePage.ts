@@ -67,15 +67,26 @@ export const HomePage: GlobalConfig = {
               label: 'Първият екран',
               fields: [
                 {
-                  name: 'heading',
-                  type: 'textarea',
+                  name: 'offerHeading',
+                  type: 'text',
                   label: 'Голямото заглавие',
                   localized: true,
-                  required: true,
-                  defaultValue: 'Танцувай\nкато през\n30-те.',
+                  defaultValue: 'Суинг танци за начинаещи',
                   admin: {
                     description:
-                      'Всеки нов ред тук става нов ред на сайта. Дизайнът е направен за три кратки реда.',
+                      'Какво продаваме, с думите, които хората търсят. Това е и заглавието, което Google чете първо. Пренася се само, без нови редове.',
+                  },
+                },
+                {
+                  name: 'heading',
+                  type: 'textarea',
+                  label: 'Малкият надпис над заглавието',
+                  localized: true,
+                  required: true,
+                  defaultValue: 'Научи се да танцуваш',
+                  admin: {
+                    description:
+                      'Кратък ред над голямото заглавие — задава тона, без да поема ролята му.',
                   },
                 },
                 {

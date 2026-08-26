@@ -4,10 +4,12 @@ import config from '../payload.config'
 const COMMIT = process.argv.includes('--commit')
 const payload = await getPayload({ config })
 
-/** Short names proposed for the mock; the school edits these in /admin. */
+/** Short names as the school gave them; editable in /admin afterwards. */
 const SHORT: Record<string, { bg: string; en: string }> = {
   'Afrikaia, Лозенец': { bg: 'Лозенец', en: 'Lozenets' },
-  'Национален Студентски Дом, зала 404': { bg: 'Студентски дом', en: 'Students House' },
+  // The school calls this one by its street rather than the building — locals
+  // navigate by the boulevard, not by "Национален Студентски Дом".
+  'Национален Студентски Дом, зала 404': { bg: 'Цар Освободител', en: 'Tsar Osvoboditel' },
 }
 
 const bg = await payload.find({ collection: 'courses', locale: 'bg', limit: 50, sort: 'id', overrideAccess: true, depth: 0 })

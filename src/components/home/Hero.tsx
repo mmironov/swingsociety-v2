@@ -7,7 +7,7 @@ import { focalPosition, mediaAlt, mediaUrl } from '../../lib/media'
 import { CmsLink } from '../site/CmsLink'
 
 /**
- * MOCK — Option A: the hero leads with the offer.
+ * The hero leads with the offer.
  *
  * The h1 was the slogan ("Танцувай като през 30-те"), which is the highest-weighted
  * text on the site's most important page spent on words nobody searches for. Here
@@ -18,16 +18,6 @@ import { CmsLink } from '../site/CmsLink'
  * passed. With no upcoming group it says so and sends people to the email form
  * instead of to a sign-up for something that has already started.
  */
-
-/** Stand-in for a CMS field. Real version would be hero.offerHeading, localized. */
-const MOCK_OFFER_HEADING: Record<Locale, string> = {
-  // No hard line breaks: Bulgarian runs about a third longer than English, and
-  // fixed breaks wrapped again inside the column — five lines that crowded the
-  // photo and pushed the buttons off the first screen. A max-width does the job at
-  // every width instead of at one.
-  bg: 'Суинг за начинаещи в София',
-  en: 'Beginner swing course in Sofia',
-}
 
 const upcoming = (groups: Course[]) => {
   const now = Date.now()
@@ -84,7 +74,7 @@ export const Hero = ({
           ) : null}
 
           <h1 className="hero__title hero__title--offer">
-            {MOCK_OFFER_HEADING[locale]}
+            {hero.offerHeading}
           </h1>
 
           <ul className="hero__facts">

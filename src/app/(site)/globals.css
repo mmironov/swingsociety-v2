@@ -664,7 +664,7 @@ a.btn:hover {
   text-transform: uppercase;
   color: #f5b334;
 }
-/* MOCK — Option A hero.
+/* Option A hero.
    The slogan, demoted from the h1. Small and quiet, so it sets the tone without
    competing with the offer beneath it. */
 .hero__tagline {
@@ -673,16 +673,6 @@ a.btn:hover {
   font-size: clamp(19px, 2vw, 26px);
   line-height: 1.15;
   color: color-mix(in srgb, #f4ece0 62%, transparent);
-}
-/* The offer headline carries more words than the slogan did, so it needs a smaller
-   ceiling than the 116px display size or it pushes the buttons off the first screen. */
-.hero__title--offer {
-  font-size: clamp(36px, 4.6vw, 62px);
-  line-height: 1.0;
-  /* A measure rather than fixed breaks, so Bulgarian and English both wrap to a
-     sensible shape without either being tuned for one viewport. */
-  max-width: 15ch;
-  margin-top: 10px;
 }
 .hero__facts {
   list-style: none;
@@ -713,7 +703,7 @@ a.btn:hover {
   color: #f5b334;
 }
 
-/* MOCK — the groups, named. Two rows rather than one line: the venue and the nights
+/* The groups, named. Two rows rather than one line: the venue and the nights
    belong together, and a single line of both wrapped badly in Bulgarian. */
 .hero__where {
   list-style: none;
@@ -750,6 +740,16 @@ a.btn:hover {
   letter-spacing: -0.02em;
   margin: 18px 0 0;
   text-wrap: balance;
+}
+/* The offer headline carries more words than the slogan did, so it needs a smaller
+   ceiling than the 116px display size or it pushes the buttons off the first screen. */
+.hero__title--offer {
+  font-size: clamp(36px, 4.6vw, 62px);
+  line-height: 1.0;
+  /* A measure rather than fixed breaks, so Bulgarian and English both wrap to a
+     sensible shape without either being tuned for one viewport. */
+  max-width: 15ch;
+  margin-top: 10px;
 }
 .hero__intro {
   max-width: 32ch;

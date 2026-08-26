@@ -21,6 +21,8 @@
     "generate:importmap": "payload generate:importmap",
     "seed": "tsx --env-file=.env src/seed/run.ts",
     "seed:fresh": "tsx --env-file=.env src/seed/run.ts --fresh",
+    "hero:copy": "tsx --env-file=.env src/scripts/set-hero-copy.ts",
+    "hero:copy:remote": "NODE_ENV=production tsx --env-file=.env.seed.local src/scripts/set-hero-copy.ts",
     "venue:short": "tsx --env-file=.env src/scripts/set-venue-short.ts",
     "venue:short:remote": "NODE_ENV=production tsx --env-file=.env.seed.local src/scripts/set-venue-short.ts",
     "groups:promote": "tsx --env-file=.env src/scripts/promote-beginner-groups.ts",

@@ -3,6 +3,7 @@ import * as migration_20260820_075735_embed_block from './20260820_075735_embed_
 import * as migration_20260826_150251_section_pages from './20260826_150251_section_pages';
 import * as migration_20260826_152722_beginners_groups from './20260826_152722_beginners_groups';
 import * as migration_20260826_184928_venue_short from './20260826_184928_venue_short';
+import * as migration_20260826_185519_hero_offer_heading from './20260826_185519_hero_offer_heading';
 
 export const migrations = [
   {
@@ -28,6 +29,11 @@ export const migrations = [
   {
     up: migration_20260826_184928_venue_short.up,
     down: migration_20260826_184928_venue_short.down,
-    name: '20260826_184928_venue_short'
+    name: '20260826_184928_venue_short',
+  },
+  {
+    up: migration_20260826_185519_hero_offer_heading.up,
+    down: migration_20260826_185519_hero_offer_heading.down,
+    name: '20260826_185519_hero_offer_heading'
   },
 ];
