@@ -39,7 +39,12 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
     title: { absolute: title },
     description,
     alternates: { canonical: path('/', locale), ...alternatesFor('/') },
-    openGraph: { title, description, ...(ogImage ? { images: [{ url: ogImage }] } : {}) },
+    openGraph: {
+      url: path('/', locale),
+      title,
+      description,
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+    },
   }
 }
 

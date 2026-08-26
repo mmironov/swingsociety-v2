@@ -20,6 +20,13 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
     title: page.meta?.title ? { absolute: page.meta.title } : page.title,
     description: page.meta?.description || page.lead || undefined,
     alternates: { canonical: path('/team', locale), ...alternatesFor('/team') },
+    // Without its own openGraph this page inherited the site title from the layout,
+    // so sharing it showed "Swing Society" instead of what the page is about.
+    openGraph: {
+      url: path('/team', locale),
+      title: page.meta?.title || page.title,
+      description: page.meta?.description || page.lead || undefined,
+    },
   }
 }
 

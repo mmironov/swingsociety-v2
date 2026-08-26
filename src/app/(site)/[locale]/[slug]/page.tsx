@@ -48,6 +48,7 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
     },
     openGraph: {
       type: 'article',
+      url: path(`/${slug}`, locale),
       title,
       description,
       ...(ogImage ? { images: [{ url: ogImage }] } : {}),

@@ -52,6 +52,10 @@ export const generateMetadata = async ({
       type: 'website',
       siteName: settings.brandName,
       locale: HTML_LANG[locale],
+      // Matches the canonical. Facebook and Viber usually infer this, but "usually"
+      // is a poor property for the URL a share points at, and a page that overrides
+      // openGraph inherits this default rather than silently having none.
+      url: `/${locale}`,
       title,
       description,
       ...(ogImage ? { images: [{ url: ogImage }] } : {}),
