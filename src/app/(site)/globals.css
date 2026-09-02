@@ -1723,6 +1723,15 @@ a.btn:hover {
   text-align: right;
   white-space: nowrap;
 }
+.cell--name {
+  min-width: 250px;
+}
+.event-tag {
+  margin-left: 8px;
+}
+.table--events .cell--name {
+  min-width: 230px;
+}
 .cell--strong {
   font-weight: 600;
 }
@@ -1775,6 +1784,114 @@ a.btn:hover {
   font-size: 15px;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* ── Schedule tables as cards ─────────────────────────────────────────────
+   The two tables need ~900px to hold their columns, so on a phone the wrapper
+   scrolls them sideways and most of every row starts off-screen. Below the
+   breakpoint each row becomes a card carrying all of its own information: the
+   same single table in the DOM, with each cell labelled from the `data-label`
+   the page renders, rather than a table plus a duplicate mobile list. */
+@media (max-width: 940px) {
+  .table-wrap {
+    /* The cards bring their own surface, so the wrapper's panel would only be a
+       second background behind them. */
+    overflow-x: visible;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+  }
+  .table.table--cards {
+    display: block;
+    min-width: 0;
+    font-size: 15px;
+  }
+  /* Every cell states its own label now, so the header row has nothing left
+     to say — to a screen reader as much as on screen. */
+  .table--cards thead {
+    display: none;
+  }
+  .table--cards tbody {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 14px;
+  }
+  .table--cards tr {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: 18px 20px 20px;
+  }
+  .table.table--cards td {
+    display: block;
+    border-top: 0;
+    padding: 0;
+  }
+  .table--cards .cell--name {
+    min-width: 0;
+    padding-bottom: 14px;
+  }
+  /* Label left, value right, one line each — the row rules do the separating
+     the table's cell borders used to do. */
+  .table--cards td[data-label] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-top: 1px solid var(--color-divider);
+    text-align: right;
+  }
+  .table--cards td[data-label]::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-neutral-600);
+    text-align: left;
+  }
+  /* A venue or a ticket link the CMS has not filled in leaves the cell empty,
+     which in a table is an unremarkable blank but as a card row would be a
+     labelled rule with nothing after it. */
+  .table--cards td[data-label]:empty {
+    display: none;
+  }
+  /* The event name is the third cell in source order, because the table reads
+     date-first; in a card it has to be the heading. */
+  .table--events.table--cards .cell--name {
+    order: -1;
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 19px;
+    line-height: 1.2;
+  }
+  /* The type tag rides inside that cell, and it is UI chrome rather than part of
+     the title, so it keeps the body face. */
+  .table--events.table--cards .cell--name .tag {
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
+  /* Beside the title on one line the tag needs a gap; stacked under it in a card
+     that same gap reads as an indent. */
+  .table--cards .event-tag {
+    margin: 7px 0 0;
+  }
+  .table--cards .cell--cta {
+    /* Where two cards sit side by side the grid stretches them to a shared
+       height; pushing the button down keeps the two buttons on one line rather
+       than at whatever height each card's rows happen to end. */
+    margin-top: auto;
+    padding-top: 16px;
+  }
+  .table--cards .cell--cta .btn {
+    display: block;
+    width: 100%;
+    padding: 13px 20px;
+    text-align: center;
+  }
 }
 
 /* ── 404 ──────────────────────────────────────────────────────────────────── */

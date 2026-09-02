@@ -84,7 +84,7 @@ const ScheduleRoute = async ({ params }: Props) => {
           <h2 className="schedule__h2">{page.groupsHeading}</h2>
           {courses.length > 0 ? (
             <div className="table-wrap">
-              <table className="table table--groups">
+              <table className="table table--groups table--cards">
                 <thead>
                   <tr>
                     <th>{t('colGroup', locale)}</th>
@@ -100,7 +100,7 @@ const ScheduleRoute = async ({ params }: Props) => {
                     const detailPage = typeof course.page === 'object' ? course.page : null
                     return (
                       <tr key={course.id}>
-                        <td style={{ minWidth: 250 }}>
+                        <td className="cell--name">
                           {detailPage?.slug ? (
                             <Link className="group-name" href={path(`/${detailPage.slug}`, locale)}>
                               {course.title}
@@ -110,15 +110,19 @@ const ScheduleRoute = async ({ params }: Props) => {
                           )}
                           {course.subtitle ? <div className="group-sub">{course.subtitle}</div> : null}
                         </td>
-                        <td className="cell--nowrap cell--strong">{course.day ?? t('tbd', locale)}</td>
-                        <td className="cell--nowrap">{course.time ?? t('tbd', locale)}</td>
-                        <td>
+                        <td className="cell--nowrap cell--strong" data-label={t('colDay', locale)}>
+                          {course.day ?? t('tbd', locale)}
+                        </td>
+                        <td className="cell--nowrap" data-label={t('colTime', locale)}>
+                          {course.time ?? t('tbd', locale)}
+                        </td>
+                        <td data-label={t('colLocation', locale)}>
                           <MapLink venue={course.venue} mapUrl={course.mapUrl} />
                         </td>
-                        <td className="cell--nowrap">
+                        <td className="cell--nowrap" data-label={t('colStart', locale)}>
                           <span className="tag tag-accent-2 tag-md">{startLabel(course, locale)}</span>
                         </td>
-                        <td className="cell--right">
+                        <td className="cell--right cell--cta">
                           <CmsLink
                             link={course.registration ?? null}
                             locale={locale}
@@ -143,7 +147,7 @@ const ScheduleRoute = async ({ params }: Props) => {
           <h2 className="schedule__h2">{page.eventsHeading}</h2>
           {events.length > 0 ? (
             <div className="table-wrap">
-              <table className="table table--events">
+              <table className="table table--events table--cards">
                 <thead>
                   <tr>
                     <th>{t('colDate', locale)}</th>
@@ -170,7 +174,7 @@ const ScheduleRoute = async ({ params }: Props) => {
 
                     return (
                       <tr key={event.id}>
-                        <td className="cell--nowrap">
+                        <td className="cell--nowrap" data-label={t('colDate', locale)}>
                           {calendar ? (
                             <a
                               className="cal-link"
@@ -186,17 +190,19 @@ const ScheduleRoute = async ({ params }: Props) => {
                             <span className="cell--strong">{dateText}</span>
                           )}
                         </td>
-                        <td className="cell--nowrap cell--muted">{timeText}</td>
-                        <td style={{ minWidth: 230 }}>
+                        <td className="cell--nowrap cell--muted" data-label={t('colTime', locale)}>
+                          {timeText}
+                        </td>
+                        <td className="cell--name">
                           {event.title}{' '}
-                          <span className={eventTagClass(event.type)} style={{ marginLeft: 8 }}>
+                          <span className={`${eventTagClass(event.type)} event-tag`}>
                             {eventTypeLabel(event.type, locale)}
                           </span>
                         </td>
-                        <td>
+                        <td data-label={t('colLocation', locale)}>
                           <MapLink venue={event.venue} mapUrl={event.mapUrl} />
                         </td>
-                        <td className="cell--right">
+                        <td className="cell--right" data-label={t('colTickets', locale)}>
                           <CmsLink link={event.ticket ?? null} locale={locale} className="cell--strong">
                             {event.ticket?.label ? `${event.ticket.label} →` : null}
                           </CmsLink>
