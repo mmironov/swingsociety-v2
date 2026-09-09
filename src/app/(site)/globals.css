@@ -1885,6 +1885,9 @@ a.btn:hover {
        than at whatever height each card's rows happen to end. */
     margin-top: auto;
     padding-top: 16px;
+    /* The cell is right-aligned for the table's last column; in a card the
+       button belongs in the middle. */
+    text-align: center;
   }
   /* The card is narrow enough that the button reads as the card's action without
      being stretched across it; it keeps the right edge the values line up on. */
