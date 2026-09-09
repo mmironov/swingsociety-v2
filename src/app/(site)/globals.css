@@ -1886,11 +1886,11 @@ a.btn:hover {
     margin-top: auto;
     padding-top: 16px;
   }
+  /* The card is narrow enough that the button reads as the card's action without
+     being stretched across it; it keeps the right edge the values line up on. */
   .table--cards .cell--cta .btn {
-    display: block;
-    width: 100%;
-    padding: 13px 20px;
-    text-align: center;
+    padding: 9px 18px;
+    font-size: 14px;
   }
 }
 
